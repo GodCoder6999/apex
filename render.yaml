@@ -1,0 +1,10 @@
+# Render Static Site (no PHP, no server). Push this repo to GitHub, then in
+# Render: New + → Static Site → pick repo. These values are auto-read.
+services:
+  - type: web
+    name: apex-owner-web
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: true
+    # HashRouter is used, so no SPA rewrite rule is required.
