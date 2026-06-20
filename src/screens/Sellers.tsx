@@ -31,7 +31,9 @@ export function Sellers() {
   const rows = sellers.filter((s) => s.name.toLowerCase().includes(q.trim().toLowerCase()));
   const submit = () => {
     if (!f.name || !f.phone) { toast('Name and phone required', 'err'); return; }
-    saveSeller({ name: f.name, phone: f.phone, email: f.email, active: true });
+    if (!f.email) { toast('Email required for login', 'err'); return; }
+    if (!f.password || f.password.length < 6) { toast('Password min 6 characters', 'err'); return; }
+    saveSeller({ name: f.name, phone: f.phone, email: f.email, password: f.password, active: true });
     toast('Seller added'); setF({}); setAdding(false);
   };
 
@@ -74,7 +76,8 @@ export function Sellers() {
         <div style={{ padding: 20 }}>
           <Field label="Name"><TextInput value={f.name ?? ''} autoFocus onChange={(e) => setF((s) => ({ ...s, name: e.target.value }))} /></Field>
           <Field label="Phone"><TextInput value={f.phone ?? ''} onChange={(e) => setF((s) => ({ ...s, phone: e.target.value }))} /></Field>
-          <Field label="Email (login)"><TextInput value={f.email ?? ''} onChange={(e) => setF((s) => ({ ...s, email: e.target.value }))} placeholder="seller@apex.in" /></Field>
+          <Field label="Email (login)"><TextInput type="email" value={f.email ?? ''} onChange={(e) => setF((s) => ({ ...s, email: e.target.value }))} placeholder="seller@apex.in" /></Field>
+          <Field label="Password"><TextInput type="password" value={f.password ?? ''} onChange={(e) => setF((s) => ({ ...s, password: e.target.value }))} placeholder="Min 6 characters · for seller app login" /></Field>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <Btn variant="ghost" onClick={() => setAdding(false)}>Cancel</Btn>
             <Btn icon="save" onClick={submit}>Add seller</Btn>

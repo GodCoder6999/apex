@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { color, radius, shadow } from '../theme';
 import { ScreenHeader } from '../ui';
+import { Icon } from '../icons';
 import { rupee, rupeeCompact } from '../format';
-import { useOrders, usePayments, useUnits, useProducts, useSellers } from '../data/db';
+import { useOrders, usePayments, useUnits, useProducts, useSellers, categoryName } from '../data/db';
 
 export function Analytics() {
   const orders = useOrders();
@@ -28,6 +29,20 @@ export function Analytics() {
   // 12-week synthetic sales bars for the chart
   const bars = useMemo(() => [42, 38, 55, 48, 60, 52, 68, 64, 75, 70, 82, 90], []);
   const maxBar = Math.max(...bars);
+
+  // product-wise sales ranking
+  const [metric, setMetric] = useState<'units' | 'revenue'>('units');
+  const [showAll, setShowAll] = useState(false);
+  const topProducts = useMemo(() => {
+    const agg = new Map<string, { name: string; cat: string; units: number; revenue: number }>();
+    orders.forEach((o) => o.lines.forEach((l) => {
+      const p = products.find((x) => x.id === l.productId);
+      const cur = agg.get(l.productId) ?? { name: l.name, cat: p ? categoryName(p.categoryId) : '—', units: 0, revenue: 0 };
+      agg.set(l.productId, { ...cur, units: cur.units + 1, revenue: cur.revenue + l.lineTotal });
+    }));
+    return [...agg.values()].sort((a, b) => b[metric] - a[metric]);
+  }, [orders, products, metric]);
+  const shown = showAll ? topProducts : topProducts.slice(0, 10);
 
   return (
     <div style={{ animation: 'screenIn .42s cubic-bezier(.22,1,.36,1)' }}>
@@ -73,6 +88,42 @@ export function Analytics() {
           ))}
           {m.perSeller.length === 0 && <div style={{ fontSize: 12.5, color: color.faint }}>No seller sales yet.</div>}
         </div>
+      </div>
+
+      {/* product-wise ranking */}
+      <div style={{ background: color.card, border: `1px solid ${color.border}`, borderRadius: radius.xxl, boxShadow: shadow.card, overflow: 'hidden', marginTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 12px' }}>
+          <div style={{ fontSize: 14.5, fontWeight: 620 }}>Top products{showAll ? '' : ` · top ${Math.min(10, topProducts.length)}`}</div>
+          <div style={{ display: 'flex', background: color.inputBg, borderRadius: 9, padding: 2 }}>
+            {(['units', 'revenue'] as const).map((mt) => (
+              <button key={mt} onClick={() => setMetric(mt)} style={{ height: 30, padding: '0 12px', borderRadius: 7, border: 0,
+                fontSize: 12.5, fontWeight: 600, textTransform: 'capitalize',
+                background: metric === mt ? '#fff' : 'transparent', color: metric === mt ? color.ink : color.faint }}>{mt}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '40px 2.2fr 1.2fr 0.8fr 1fr', gap: 12, padding: '8px 20px',
+          background: color.cardAlt, fontSize: 11, fontWeight: 600, color: color.faint, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+          <span>#</span><span>Product</span><span>Category</span><span style={{ textAlign: 'center' }}>Units</span><span style={{ textAlign: 'right' }}>Revenue</span>
+        </div>
+        {shown.map((p, i) => (
+          <div key={p.name} style={{ display: 'grid', gridTemplateColumns: '40px 2.2fr 1.2fr 0.8fr 1fr', gap: 12, padding: '11px 20px',
+            borderTop: `1px solid ${color.hairline}`, alignItems: 'center' }}>
+            <span className="tnum" style={{ fontSize: 12.5, fontWeight: 700, color: i < 3 ? color.accentDeep : color.faint }}>{i + 1}</span>
+            <span style={{ fontSize: 13, fontWeight: 550, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
+            <span style={{ fontSize: 12.5, color: color.muted }}>{p.cat}</span>
+            <span className="tnum" style={{ textAlign: 'center', fontSize: 12.5, color: color.body }}>{p.units}</span>
+            <span className="mono tnum" style={{ textAlign: 'right', fontSize: 13, fontWeight: 600 }}>{rupee(p.revenue)}</span>
+          </div>
+        ))}
+        {topProducts.length === 0 && <div style={{ padding: '36px 20px', textAlign: 'center', fontSize: 13, color: color.faint }}>No sales yet.</div>}
+        {topProducts.length > 10 && (
+          <button onClick={() => setShowAll((v) => !v)} style={{ width: '100%', padding: '13px', border: 0, borderTop: `1px solid ${color.hairline}`,
+            background: color.cardAlt, color: color.accentDeep, fontSize: 12.5, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+            {showAll ? 'View less' : `View all ${topProducts.length} products`}
+            <span style={{ transform: showAll ? 'rotate(180deg)' : 'none', display: 'flex', transition: 'transform .2s' }}><Icon name="cdown" size={14} strokeWidth={2} /></span>
+          </button>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
 // later without touching screens.
 import { useEffect, useState } from 'react';
 import type {
-  BusinessSettings, Category, Customer, Order, OrderLine, Payment, Product, Seller, Unit,
+  BusinessSettings, Category, Customer, Enquiry, Order, OrderLine, Payment, Product, Seller, Unit,
 } from './types';
 import * as seed from './seed';
 
@@ -17,15 +17,13 @@ interface DB {
   sellers: Seller[];
   orders: Order[];
   payments: Payment[];
+  enquiries: Enquiry[];
 }
 
-const KEY = 'apex-db-v1';
+export const DB_KEY = 'apex-db-v2';
+const KEY = DB_KEY;
 
-function load(): DB {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw) as DB;
-  } catch { /* ignore */ }
+function fresh(): DB {
   return {
     settings: seed.settings,
     categories: seed.categories,
@@ -35,7 +33,16 @@ function load(): DB {
     sellers: seed.sellers,
     orders: seed.orders,
     payments: seed.payments,
+    enquiries: seed.enquiries,
   };
+}
+
+function load(): DB {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return { ...fresh(), ...JSON.parse(raw) } as DB; // merge so new keys get defaults
+  } catch { /* ignore */ }
+  return fresh();
 }
 
 let state: DB = load();
@@ -78,6 +85,7 @@ export const useCustomers = () => useSelector((d) => d.customers);
 export const useSellers = () => useSelector((d) => d.sellers);
 export const useOrders = () => useSelector((d) => d.orders);
 export const usePayments = () => useSelector((d) => d.payments);
+export const useEnquiries = () => useSelector((d) => d.enquiries);
 
 // non-hook snapshot reads (for search, billing pickers)
 export const getProducts = () => state.products;
@@ -214,6 +222,45 @@ export function createOrder(input: {
   };
   emit();
   return order;
+}
+
+export function saveEnquiry(e: Omit<Enquiry, 'id' | 'createdAt' | 'status'> & { id?: string; status?: Enquiry['status'] }) {
+  if (e.id) {
+    state = { ...state, enquiries: state.enquiries.map((x) => x.id === e.id ? { ...x, ...e } as Enquiry : x) };
+  } else {
+    const enq: Enquiry = { ...e, id: uid('e'), status: e.status ?? 'open', createdAt: Date.now() } as Enquiry;
+    state = { ...state, enquiries: [enq, ...state.enquiries] };
+  }
+  emit();
+}
+export function setEnquiryStatus(id: string, status: Enquiry['status']) {
+  state = { ...state, enquiries: state.enquiries.map((x) => x.id === id ? { ...x, status } : x) };
+  emit();
+}
+export function deleteEnquiry(id: string) {
+  state = { ...state, enquiries: state.enquiries.filter((x) => x.id !== id) };
+  emit();
+}
+
+export interface Notification { id: string; icon: 'bolt' | 'clock' | 'help' | 'doc'; title: string; sub: string; tint: string; path: string; }
+/** Derived notifications: low stock, dues, open enquiries, recent invoices. */
+export function buildNotifications(): Notification[] {
+  const out: Notification[] = [];
+  const low = state.products.map((p) => ({ p, c: inStockCount(p.id) })).filter((x) => x.c > 0 && x.c <= 2);
+  low.slice(0, 4).forEach(({ p, c }) => out.push({
+    id: 'low-' + p.id, icon: 'bolt', title: `${p.name} low on stock`, sub: `${c} unit${c > 1 ? 's' : ''} left · reorder soon`,
+    tint: '#F59E0B', path: '/stock',
+  }));
+  const debtors = state.customers.map((c) => ({ c, due: customerDue(c.id) })).filter((x) => x.due > 0).sort((a, b) => b.due - a.due);
+  debtors.slice(0, 3).forEach(({ c, due }) => out.push({
+    id: 'due-' + c.id, icon: 'clock', title: `${c.name} owes ${'₹' + due.toLocaleString('en-IN')}`, sub: 'Outstanding payment',
+    tint: '#E11D48', path: '/dues',
+  }));
+  state.enquiries.filter((e) => e.status === 'open').slice(0, 3).forEach((e) => out.push({
+    id: 'enq-' + e.id, icon: 'help', title: `New enquiry · ${e.name}`, sub: e.items.map((i) => i.name).join(', ').slice(0, 48),
+    tint: '#3B82F6', path: '/enquiries',
+  }));
+  return out;
 }
 
 export function collectPayment(customerId: string, amount: number, method: Order['method']) {

@@ -1,7 +1,7 @@
 // Deterministic mock dataset for the owner website. Resembles the design's
 // sample content (electronics retail: laptops, PCs, CCTV, components).
 import type {
-  BusinessSettings, Category, Customer, Order, Payment, Product, Seller, Unit, UnitStatus,
+  BusinessSettings, Category, Customer, Enquiry, Order, Payment, Product, Seller, Unit, UnitStatus,
 } from './types';
 
 const DAY = 86_400_000;
@@ -51,9 +51,9 @@ export const products: Product[] = pseed.map((p) => ({
 }));
 
 export const sellers: Seller[] = [
-  { id: 's-1', name: 'Imran Sheikh', phone: '+91 98311 22001', email: 'imran@apex.in', active: true },
-  { id: 's-2', name: 'Priya Das', phone: '+91 98311 22002', email: 'priya@apex.in', active: true },
-  { id: 's-3', name: 'Sourav Roy', phone: '+91 98311 22003', email: 'sourav@apex.in', active: true },
+  { id: 's-1', name: 'Imran Sheikh', phone: '+91 98311 22001', email: 'imran@apex.in', password: 'imran@123', active: true },
+  { id: 's-2', name: 'Priya Das', phone: '+91 98311 22002', email: 'priya@apex.in', password: 'priya@123', active: true },
+  { id: 's-3', name: 'Sourav Roy', phone: '+91 98311 22003', email: 'sourav@apex.in', password: 'sourav@123', active: true },
 ];
 
 export const customers: Customer[] = [
@@ -130,5 +130,20 @@ export const payments: Payment[] = orders
     id: `pay-${i}`, customerId: o.customerId, orderId: o.id, amount: o.paidNow,
     method: o.method, collectedBy: o.soldBy, forDue: false, at: o.createdAt,
   }));
+
+function enqItems(pairs: [string, number][]): Enquiry['items'] {
+  return pairs.map(([pid, qty]) => {
+    const p = products.find((x) => x.id === pid)!;
+    return { productId: pid, name: p.name, price: p.price, qty };
+  });
+}
+export const enquiries: Enquiry[] = [
+  { id: 'e-1', name: 'Manish Electronics', phone: '+91 90011 33001', items: enqItems([['p-6', 8], ['p-7', 1]]),
+    note: 'Wants 8-cam CCTV setup quote for a warehouse.', status: 'open', createdAt: now - 2 * 60 * 60 * 1000 },
+  { id: 'e-2', customerId: 'cu-3', name: 'TechZone Retail', phone: '+91 90070 11003', items: enqItems([['p-4', 3]]),
+    note: 'Bulk gaming towers — needs best price.', status: 'quoted', createdAt: now - DAY },
+  { id: 'e-3', name: 'Riya Sen', phone: '+91 90011 33003', items: enqItems([['p-2', 1]]),
+    note: 'Asked about MacBook Air availability + EMI.', status: 'open', createdAt: now - 3 * DAY },
+];
 
 export const TODAY = now;

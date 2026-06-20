@@ -16,6 +16,13 @@ function thumb(seed: string) {
   return thumbColors[h % thumbColors.length];
 }
 
+export function ProductThumb({ name, image, size = 38 }: { name: string; image?: string; size?: number }) {
+  if (image) return <div style={{ width: size, height: size, borderRadius: size / 3.4, flex: 'none',
+    background: `center/cover no-repeat url(${image})` }} />;
+  return <div style={{ width: size, height: size, borderRadius: size / 3.4, background: thumb(name) + '1A', color: thumb(name),
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size / 2.9, fontWeight: 700, flex: 'none' }}>{initials(name)}</div>;
+}
+
 function stockBadge(c: number) {
   if (c === 0) return badgeMap.out;
   if (c <= 2) return { ...badgeMap.low, label: `${c} left` };
@@ -67,8 +74,7 @@ export function Products() {
               gridTemplateColumns: '2.4fr 1fr 1fr 0.9fr 1fr', gap: 12, padding: '13px 20px',
               borderTop: `1px solid ${color.hairline}`, alignItems: 'center', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: thumb(p.name) + '1A', color: thumb(p.name),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flex: 'none' }}>{initials(p.name)}</div>
+                <ProductThumb name={p.name} image={p.image} />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: color.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                   <div style={{ fontSize: 11.5, color: color.faint, marginTop: 1 }}>{categoryName(p.categoryId)} · HSN {p.hsn ?? '—'}</div>
@@ -99,8 +105,7 @@ function ProductDetail({ product, onClose, onEdit }: { product: Product | null; 
       <div style={{ padding: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-            <div style={{ width: 46, height: 46, borderRadius: 12, background: thumb(product.name) + '1A', color: thumb(product.name),
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700 }}>{initials(product.name)}</div>
+            <ProductThumb name={product.name} image={product.image} size={46} />
             <div>
               <div style={{ fontSize: 17, fontWeight: 650, letterSpacing: '-0.02em' }}>{product.name}</div>
               <div style={{ fontSize: 12.5, color: color.faint, marginTop: 2 }}>{categoryName(product.categoryId)} · {product.brand}</div>
@@ -162,7 +167,7 @@ function ProductForm({ open, product, onClose }: { open: boolean; product: Produ
     saveProduct({
       id: product?.id, name: f.name!, categoryId: f.categoryId!, brand: f.brand, specs: f.specs,
       price: f.price ?? 0, costPrice: f.costPrice ?? 0, gstRate: f.gstRate ?? 18, hsn: f.hsn,
-      barcode: f.barcode, active: f.active ?? true,
+      barcode: f.barcode, image: f.image, active: f.active ?? true,
     });
     toast(product ? 'Product updated' : 'Product added');
     onClose();
@@ -195,6 +200,24 @@ function ProductForm({ open, product, onClose }: { open: boolean; product: Produ
           <Field label="GST %"><TextInput type="number" value={f.gstRate ?? ''} onChange={num('gstRate')} /></Field>
         </div>
         <Field label="HSN code"><TextInput value={f.hsn ?? ''} onChange={txt('hsn')} placeholder="8471" /></Field>
+        <Field label="Photo (optional)">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 56, height: 56, borderRadius: radius.lg, border: `1px solid ${color.borderStrong}`,
+              background: f.image ? `center/cover no-repeat url(${f.image})` : color.inputBg, color: color.faint,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+              {!f.image && <Icon name="image" size={20} stroke={color.faint} />}
+            </div>
+            <label style={{ ...inputStyle, height: 38, width: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7,
+              padding: '0 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: color.body }}>
+              <Icon name="download" size={15} />{f.image ? 'Replace' : 'Upload image'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                const file = e.target.files?.[0]; if (!file) return;
+                const r = new FileReader(); r.onload = () => set('image', String(r.result)); r.readAsDataURL(file);
+              }} />
+            </label>
+            {f.image && <button onClick={() => set('image', undefined)} style={{ background: 'transparent', border: 0, color: color.red, fontSize: 12.5, fontWeight: 600 }}>Remove</button>}
+          </div>
+        </Field>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
           <Btn icon="save" onClick={submit}>{product ? 'Save changes' : 'Add product'}</Btn>

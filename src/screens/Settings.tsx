@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { color, radius, shadow } from '../theme';
 import { Icon } from '../icons';
 import { Btn, ScreenHeader, Field, TextInput, useToast, inputStyle } from '../ui';
-import { useSettings, saveSettings, resetDB } from '../data/db';
+import { useSettings, saveSettings, resetDB, DB_KEY } from '../data/db';
 import type { BusinessSettings } from '../data/types';
 
 export function Settings() {
@@ -66,7 +66,7 @@ export function Settings() {
 }
 
 function downloadBackup() {
-  const data = localStorage.getItem('apex-db-v1') ?? '{}';
+  const data = localStorage.getItem(DB_KEY) ?? '{}';
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

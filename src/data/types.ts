@@ -22,6 +22,7 @@ export interface Product {
   hsn?: string;
   brand?: string;
   specs?: string;
+  image?: string; // optional data-URL thumbnail
   active: boolean;
 }
 
@@ -49,7 +50,26 @@ export interface Seller {
   name: string;
   phone: string;
   email?: string;
+  password?: string; // login credential (mock; hash server-side later)
   active: boolean;
+}
+
+export type EnquiryStatus = 'open' | 'quoted' | 'converted' | 'lost';
+export interface EnquiryItem {
+  productId: string;
+  name: string;
+  price: number;
+  qty: number;
+}
+export interface Enquiry {
+  id: string;
+  customerId?: string; // existing customer…
+  name: string;        // …or a walk-in name captured inline
+  phone?: string;
+  items: EnquiryItem[];
+  note?: string;
+  status: EnquiryStatus;
+  createdAt: number;
 }
 
 export interface OrderLine {

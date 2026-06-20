@@ -2,18 +2,20 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { color, radius } from '../theme';
 import { Icon } from '../icons';
 import { navGroups } from '../nav';
-import { useOrders, useProducts, inStockCount } from '../data/db';
+import { useOrders, useProducts, useEnquiries, inStockCount } from '../data/db';
 
 export function Sidebar() {
   const loc = useLocation();
   const nav = useNavigate();
   const products = useProducts();
   const orders = useOrders();
+  const enquiries = useEnquiries();
 
   const lowStock = products.filter((p) => inStockCount(p.id) > 0 && inStockCount(p.id) <= 2).length;
   const duesCount = new Set(orders.filter((o) => o.due > 0).map((o) => o.customerId)).size;
-  const badgeFor = (k?: 'lowStock' | 'dues') =>
-    k === 'lowStock' ? (lowStock || null) : k === 'dues' ? (duesCount || null) : null;
+  const openEnq = enquiries.filter((e) => e.status === 'open').length;
+  const badgeFor = (k?: 'lowStock' | 'dues' | 'enquiries') =>
+    k === 'lowStock' ? (lowStock || null) : k === 'dues' ? (duesCount || null) : k === 'enquiries' ? (openEnq || null) : null;
 
   return (
     <aside style={{

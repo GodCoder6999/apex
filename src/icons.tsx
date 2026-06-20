@@ -7,7 +7,7 @@ export type IconName =
   | 'clock' | 'trend' | 'chart' | 'badge' | 'gear' | 'search' | 'scan'
   | 'bell' | 'check' | 'x' | 'cdown' | 'cright' | 'mail' | 'download'
   | 'print' | 'trash' | 'edit' | 'wa' | 'wallet' | 'bolt' | 'arrowup'
-  | 'arrowdn' | 'save' | 'cloud';
+  | 'arrowdn' | 'save' | 'cloud' | 'help' | 'image';
 
 export function IconDefs() {
   return (
@@ -45,6 +45,8 @@ export function IconDefs() {
         <symbol id="i-arrowdn" viewBox="0 0 24 24"><path d="M12 5v14M18 13l-6 6-6-6" /></symbol>
         <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><path d="M17 21v-8H7v8M7 3v5h8" /></symbol>
         <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" /></symbol>
+        <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4" /><path d="M12 17h.01" /></symbol>
+        <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></symbol>
       </defs>
     </svg>
   );

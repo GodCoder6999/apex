@@ -36,9 +36,10 @@ export function Stock() {
   const groups = useMemo(() => {
     const t = q.trim().toLowerCase();
     return products.map((p) => {
+      const nameHit = !t || p.name.toLowerCase().includes(t) || p.brand?.toLowerCase().includes(t);
       const us = units.filter((u) => u.productId === p.id
         && (status === 'all' || u.status === status)
-        && (!t || u.serial.toLowerCase().includes(t)));
+        && (!t || nameHit || u.serial.toLowerCase().includes(t)));
       return { p, units: us };
     }).filter((g) => g.units.length > 0);
   }, [products, units, q, status]);
@@ -59,7 +60,7 @@ export function Stock() {
         <div className="focusRing" style={{ display: 'flex', alignItems: 'center', gap: 9, background: color.card,
           border: `1px solid ${color.borderStrong}`, borderRadius: radius.md, padding: '0 12px', height: 38, width: 280 }}>
           <Icon name="scan" size={15} stroke={color.faint} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by serial / IMEI…"
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search serial, product or brand…"
             style={{ border: 0, background: 'transparent', flex: 1, fontSize: 13.5, fontFamily: mono }} />
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

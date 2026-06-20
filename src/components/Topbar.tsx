@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { color, radius, shadow, mono } from '../theme';
 import { Icon, type IconName } from '../icons';
-import { getProducts, getUnits, getCustomers, getOrders, categoryName, customerName } from '../data/db';
-import { rupee, initials } from '../format';
+import {
+  getProducts, getUnits, getCustomers, getOrders, categoryName, customerName,
+  buildNotifications, useProducts, useOrders, useEnquiries,
+} from '../data/db';
+import { rupee } from '../format';
 
 interface Result { icon: IconName; title: string; sub: string; tag?: string; onClick: () => void; group: string; }
 
@@ -11,6 +14,13 @@ export function Topbar() {
   const nav = useNavigate();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const [seen, setSeen] = useState(false);
+
+  // recompute notifications whenever the underlying data changes
+  useProducts(); useOrders(); useEnquiries();
+  const notifications = useMemo(() => buildNotifications(), [/* live via hooks above */]); // eslint-disable-line react-hooks/exhaustive-deps
+  const hasUnseen = notifications.length > 0 && !seen;
 
   const groups = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -115,12 +125,46 @@ export function Topbar() {
         fontSize: 13, fontWeight: 600, boxShadow: '0 1px 2px rgba(15,23,42,0.2)' }}>
         <Icon name="plus" size={16} />New Order
       </button>
-      <button style={{ width: 38, height: 38, borderRadius: radius.md, background: color.inputBg,
-        border: `1px solid ${color.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        <Icon name="bell" size={17} stroke={color.body} strokeWidth={1.7} />
-        <span style={{ position: 'absolute', top: 8, right: 9, width: 6, height: 6, borderRadius: '50%',
-          background: color.red, border: `1.5px solid ${color.inputBg}` }} />
-      </button>
+      <div style={{ position: 'relative', zIndex: 70 }}>
+        <button onClick={() => { setBellOpen((v) => !v); setSeen(true); }} style={{ width: 38, height: 38, borderRadius: radius.md, background: color.inputBg,
+          border: `1px solid ${color.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          <Icon name="bell" size={17} stroke={color.body} strokeWidth={1.7} />
+          {hasUnseen && <span style={{ position: 'absolute', top: 8, right: 9, width: 6, height: 6, borderRadius: '50%',
+            background: color.red, border: `1.5px solid ${color.inputBg}` }} />}
+        </button>
+        {bellOpen && (
+          <>
+            <div onClick={() => setBellOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: -1 }} />
+            <div style={{ position: 'absolute', top: 'calc(100% + 9px)', right: 0, width: 360, background: '#fff',
+              border: `1px solid ${color.border}`, borderRadius: radius.xl, boxShadow: shadow.pop, overflow: 'hidden',
+              animation: 'modalIn .2s cubic-bezier(.22,1,.36,1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: `1px solid ${color.hairline}` }}>
+                <div style={{ fontSize: 13.5, fontWeight: 650 }}>Notifications</div>
+                <span style={{ fontSize: 11.5, color: color.faint }}>{notifications.length} active</span>
+              </div>
+              <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                {notifications.map((n) => (
+                  <div key={n.id} onClick={() => { nav(n.path); setBellOpen(false); }} className="rowHover"
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '11px 16px', cursor: 'pointer', borderTop: `1px solid ${color.hairline}` }}>
+                    <span style={{ width: 30, height: 30, borderRadius: 8, flex: 'none', background: n.tint + '1A', color: n.tint,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={n.icon} size={15} strokeWidth={1.9} /></span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 550, color: color.ink }}>{n.title}</div>
+                      <div style={{ fontSize: 11.5, color: color.faint, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.sub}</div>
+                    </div>
+                  </div>
+                ))}
+                {notifications.length === 0 && (
+                  <div style={{ padding: '34px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: color.muted, fontWeight: 550 }}>All caught up</div>
+                    <div style={{ fontSize: 12, color: color.faint, marginTop: 3 }}>No low stock, dues or open enquiries.</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </header>
   );
 }

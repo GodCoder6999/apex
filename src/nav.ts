@@ -1,6 +1,6 @@
 import type { IconName } from './icons';
 
-export interface NavItem { name: string; path: string; icon: IconName; badgeKey?: 'lowStock' | 'dues'; }
+export interface NavItem { name: string; path: string; icon: IconName; badgeKey?: 'lowStock' | 'dues' | 'enquiries'; }
 export interface NavGroup { label: string; items: NavItem[]; }
 
 export const navGroups: NavGroup[] = [
@@ -15,6 +15,7 @@ export const navGroups: NavGroup[] = [
   ] },
   { label: 'Sales', items: [
     { name: 'New Order', path: '/order', icon: 'cart' },
+    { name: 'Enquiries', path: '/enquiries', icon: 'help', badgeKey: 'enquiries' },
     { name: 'Invoices', path: '/invoices', icon: 'doc' },
     { name: 'Customers', path: '/customers', icon: 'users' },
     { name: 'Dues', path: '/dues', icon: 'clock', badgeKey: 'dues' },

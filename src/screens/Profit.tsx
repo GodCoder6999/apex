@@ -4,21 +4,25 @@ import { ScreenHeader } from '../ui';
 import { rupee } from '../format';
 import { useOrders, useProducts, categoryName } from '../data/db';
 import { chipStyle } from './Products';
+import { TODAY } from '../data/seed';
 
-type Range = 7 | 30 | 90 | 365;
+type Range = 'today' | 7 | 30 | 90 | 365;
 const ranges: { id: Range; name: string }[] = [
-  { id: 7, name: '7 days' }, { id: 30, name: '30 days' }, { id: 90, name: '90 days' }, { id: 365, name: '1 year' },
+  { id: 'today', name: 'Today' }, { id: 7, name: '7 days' }, { id: 30, name: '30 days' },
+  { id: 90, name: '90 days' }, { id: 365, name: '1 year' },
 ];
+const dayStart = (ms: number) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
 
 export function Profit() {
   const orders = useOrders();
   const products = useProducts();
-  const [range, setRange] = useState<Range>(30);
+  const [range, setRange] = useState<Range>('today');
 
   const data = useMemo(() => {
-    const since = Date.now() - range * 86_400_000;
-    // include seed orders (older fixed dates) by always counting all for the demo dataset
-    const scoped = orders;
+    // Anchor "now" to the demo dataset's date so ranges select real rows.
+    const anchor = Math.max(TODAY, ...orders.map((o) => o.createdAt));
+    const since = range === 'today' ? dayStart(anchor) : anchor - range * 86_400_000;
+    const scoped = orders.filter((o) => o.createdAt >= since);
     let revenue = 0, cost = 0, discounts = 0, tax = 0;
     const byCat = new Map<string, number>();
     const byProduct = new Map<string, { name: string; profit: number; qty: number }>();
@@ -39,8 +43,7 @@ export function Profit() {
     const netProfit = revenue - cost - discounts;
     const cats = [...byCat.entries()].map(([id, v]) => ({ name: categoryName(id), v })).sort((a, b) => b.v - a.v);
     const prods = [...byProduct.values()].sort((a, b) => b.profit - a.profit).slice(0, 8);
-    void since;
-    return { revenue, cost, discounts, tax, netProfit, cats, prods };
+    return { revenue, cost, discounts, tax, netProfit, cats, prods, count: scoped.length };
   }, [orders, products, range]);
 
   return (
