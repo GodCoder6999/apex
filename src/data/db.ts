@@ -7,6 +7,14 @@ import type {
   BusinessSettings, Category, Customer, Enquiry, Order, OrderLine, Payment, Product, Seller, Unit,
 } from './types';
 import * as seed from './seed';
+import { USE_API } from './config';
+import { api } from './api';
+
+/** Run an API write only when the live backend is enabled; never throw. */
+function sync(fn: () => Promise<unknown>) {
+  if (!USE_API) return;
+  fn().catch((e) => console.warn('[api sync]', e));
+}
 
 interface DB {
   settings: BusinessSettings;
@@ -59,6 +67,29 @@ export function resetDB() {
   localStorage.removeItem(KEY);
   state = load();
   emit();
+}
+
+/** Hydrate the store from the live API when VITE_API_BASE is set. Called once
+ *  at boot from main.tsx. No-op (keeps mock data) when USE_API is false. */
+export async function initStore() {
+  if (!USE_API) return;
+  try {
+    const b = await api.bootstrap();
+    state = {
+      settings: b.settings ?? state.settings,
+      categories: b.categories ?? [],
+      products: b.products ?? [],
+      units: b.units ?? [],
+      customers: b.customers ?? [],
+      sellers: b.sellers ?? [],
+      orders: b.orders ?? [],
+      payments: b.payments ?? [],
+      enquiries: b.enquiries ?? [],
+    };
+    emit();
+  } catch (e) {
+    console.warn('[api bootstrap] falling back to local data:', e);
+  }
 }
 
 /** Subscribe a selector to store changes; re-runs on every mutation. */
@@ -117,20 +148,25 @@ export function customerDue(customerId: string) {
 
 // ---------- mutations ----------
 export function addCategory(name: string) {
-  state = { ...state, categories: [...state.categories, { id: uid('c'), name, active: true }] };
+  const cat = { id: uid('c'), name, active: true };
+  state = { ...state, categories: [...state.categories, cat] };
   emit();
+  sync(() => api.saveCategory(cat));
 }
 export function deleteCategory(id: string) {
   state = { ...state, categories: state.categories.filter((c) => c.id !== id) };
   emit();
+  sync(() => api.deleteCategory(id));
 }
 export function saveProduct(p: Omit<Product, 'id'> & { id?: string }) {
+  const saved = { ...p, id: p.id ?? uid('p') } as Product;
   if (p.id) {
-    state = { ...state, products: state.products.map((x) => (x.id === p.id ? { ...x, ...p } as Product : x)) };
+    state = { ...state, products: state.products.map((x) => (x.id === p.id ? saved : x)) };
   } else {
-    state = { ...state, products: [...state.products, { ...p, id: uid('p') } as Product] };
+    state = { ...state, products: [...state.products, saved] };
   }
   emit();
+  sync(() => api.saveProduct(saved));
 }
 export function deleteProduct(id: string) {
   state = {
@@ -139,6 +175,7 @@ export function deleteProduct(id: string) {
     units: state.units.filter((u) => u.productId !== id),
   };
   emit();
+  sync(() => api.deleteProduct(id));
 }
 export function addUnits(productId: string, serials: { serial: string; cost: number }[]) {
   const added: Unit[] = serials.map((s) => ({
@@ -147,31 +184,34 @@ export function addUnits(productId: string, serials: { serial: string; cost: num
   }));
   state = { ...state, units: [...added, ...state.units] };
   emit();
+  added.forEach((u) => sync(() => api.addUnit(u)));
   return added.length;
 }
 export function saveCustomer(c: Omit<Customer, 'id'> & { id?: string }) {
-  let saved: Customer;
+  const saved = { ...c, id: c.id ?? uid('cu') } as Customer;
   if (c.id) {
-    saved = { ...c } as Customer;
     state = { ...state, customers: state.customers.map((x) => (x.id === c.id ? saved : x)) };
   } else {
-    saved = { ...c, id: uid('cu') } as Customer;
     state = { ...state, customers: [...state.customers, saved] };
   }
   emit();
+  sync(() => api.saveCustomer(saved));
   return saved;
 }
 export function saveSeller(s: Omit<Seller, 'id'> & { id?: string }) {
+  const saved = { ...s, id: s.id ?? uid('s') } as Seller;
   if (s.id) {
-    state = { ...state, sellers: state.sellers.map((x) => (x.id === s.id ? { ...x, ...s } as Seller : x)) };
+    state = { ...state, sellers: state.sellers.map((x) => (x.id === s.id ? saved : x)) };
   } else {
-    state = { ...state, sellers: [...state.sellers, { ...s, id: uid('s') } as Seller] };
+    state = { ...state, sellers: [...state.sellers, saved] };
   }
   emit();
+  sync(() => api.saveSeller(saved));
 }
 export function saveSettings(s: BusinessSettings) {
   state = { ...state, settings: s };
   emit();
+  sync(() => api.saveSettings(s));
 }
 
 /** Next sequential invoice number: PREFIX/FY/NNNN. */
@@ -221,25 +261,32 @@ export function createOrder(input: {
       : state.payments,
   };
   emit();
+  sync(() => api.createOrder({
+    customerId: input.customerId, lines: input.lines, discountTotal: input.discountTotal,
+    paidNow: input.paidNow, method: input.method, soldBy: order.soldBy,
+  }));
   return order;
 }
 
 export function saveEnquiry(e: Omit<Enquiry, 'id' | 'createdAt' | 'status'> & { id?: string; status?: Enquiry['status'] }) {
-  if (e.id) {
-    state = { ...state, enquiries: state.enquiries.map((x) => x.id === e.id ? { ...x, ...e } as Enquiry : x) };
-  } else {
-    const enq: Enquiry = { ...e, id: uid('e'), status: e.status ?? 'open', createdAt: Date.now() } as Enquiry;
-    state = { ...state, enquiries: [enq, ...state.enquiries] };
-  }
+  const enq: Enquiry = e.id
+    ? { ...state.enquiries.find((x) => x.id === e.id)!, ...e } as Enquiry
+    : { ...e, id: uid('e'), status: e.status ?? 'open', createdAt: Date.now() } as Enquiry;
+  state = e.id
+    ? { ...state, enquiries: state.enquiries.map((x) => x.id === e.id ? enq : x) }
+    : { ...state, enquiries: [enq, ...state.enquiries] };
   emit();
+  sync(() => api.saveEnquiry(enq));
 }
 export function setEnquiryStatus(id: string, status: Enquiry['status']) {
   state = { ...state, enquiries: state.enquiries.map((x) => x.id === id ? { ...x, status } : x) };
   emit();
+  sync(() => api.setEnquiryStatus(id, status));
 }
 export function deleteEnquiry(id: string) {
   state = { ...state, enquiries: state.enquiries.filter((x) => x.id !== id) };
   emit();
+  sync(() => api.deleteEnquiry(id));
 }
 
 export interface Notification { id: string; icon: 'bolt' | 'clock' | 'help' | 'doc'; title: string; sub: string; tint: string; path: string; }
@@ -280,4 +327,5 @@ export function collectPayment(customerId: string, amount: number, method: Order
     }],
   };
   emit();
+  sync(() => api.collect(customerId, amount, method));
 }

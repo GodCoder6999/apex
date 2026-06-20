@@ -5,6 +5,10 @@ import './styles.css';
 import { IconDefs } from './icons';
 import { ToastProvider } from './ui';
 import { App } from './App';
+import { initStore } from './data/db';
+
+// Hydrates from the live API when VITE_API_BASE is set; no-op on mock.
+void initStore();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
