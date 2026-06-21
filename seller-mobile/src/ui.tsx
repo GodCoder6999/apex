@@ -1,8 +1,8 @@
 // RN UI kit styled to the Apex design tokens.
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   View, Text as RNText, TextInput, Pressable, Modal, Animated, ScrollView,
-  KeyboardAvoidingView, Platform,
+  Keyboard, Platform,
   type TextStyle, type ViewStyle, type StyleProp, type TextInputProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,26 +107,37 @@ export function Chip({ label, active, onPress, count }: { label: string; active:
 }
 
 // ---------- Bottom Sheet ----------
+/** Tracks soft-keyboard height (reliable inside Android Modals, unlike KAV). */
+function useKeyboardHeight() {
+  const [h, setH] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setH(e.endCoordinates.height));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setH(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+  return h;
+}
+
 export function Sheet({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: ReactNode; title?: string }) {
   const insets = useSafeAreaInsets();
+  const kb = useKeyboardHeight();
+  // Lift the panel above the keyboard; subtract the safe-area inset already in padding.
+  const lift = kb > 0 ? Math.max(0, kb - insets.bottom) : 0;
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      {/* KeyboardAvoidingView lifts the panel above the soft keyboard */}
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
-        <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(11,18,32,0.45)' }} />
-        <View style={{ backgroundColor: color.card, borderTopLeftRadius: 22, borderTopRightRadius: 22,
-          maxHeight: '92%', paddingBottom: 18 + insets.bottom }}>
-          <View style={{ alignItems: 'center', paddingTop: 10 }}><View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#CBD5E1' }} /></View>
-          {title != null && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 }}>
-              <T w="s" size={16}>{title}</T>
-              <Pressable onPress={onClose} hitSlop={10} style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color.inputBg, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="x" size={15} color={color.muted} stroke={2} /></Pressable>
-            </View>
-          )}
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}>{children}</ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+      <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(11,18,32,0.45)' }} />
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: color.card,
+        borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '92%', paddingBottom: 18 + insets.bottom + lift }}>
+        <View style={{ alignItems: 'center', paddingTop: 10 }}><View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#CBD5E1' }} /></View>
+        {title != null && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 }}>
+            <T w="s" size={16}>{title}</T>
+            <Pressable onPress={onClose} hitSlop={10} style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color.inputBg, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="x" size={15} color={color.muted} stroke={2} /></Pressable>
+          </View>
+        )}
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}>{children}</ScrollView>
+      </View>
     </Modal>
   );
 }
