@@ -28,6 +28,18 @@ function downloadBlob(blob: Blob, name: string) {
 
 const hsnOf = (productId: string) => getProducts().find((p) => p.id === productId)?.hsn ?? '—';
 
+/** Aggregate taxable value + tax per HSN/SAC for the GST breakup table. */
+function hsnBreakup(order: Order, _inter: boolean) {
+  const map = new Map<string, { hsn: string; taxable: number; tax: number }>();
+  order.lines.forEach((l) => {
+    const hsn = hsnOf(l.productId);
+    const taxable = l.price - l.discount;
+    const cur = map.get(hsn) ?? { hsn, taxable: 0, tax: 0 };
+    map.set(hsn, { hsn, taxable: cur.taxable + taxable, tax: cur.tax + l.taxAmt });
+  });
+  return [...map.values()];
+}
+
 const stateCode = (gstin?: string) => (gstin ? gstin.slice(0, 2) : '');
 const amt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const B = '1px solid #94A3B8'; // hairline like a printed invoice
@@ -163,7 +175,22 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
 
           {/* tax summary */}
           <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: '1fr 320px' }}>
-            <div style={{ borderRight: B }} />
+            {/* HSN/SAC-wise tax breakup (fills the left, GST-standard) */}
+            <div style={{ borderRight: B }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 0.8fr 0.8fr', background: '#F1F5F9', fontWeight: 700, fontSize: 10 }}>
+                {['HSN/SAC', 'Taxable', inter ? 'IGST' : 'CGST', inter ? '' : 'SGST'].map((h, i) => (
+                  <div key={i} style={{ padding: '4px 6px', borderRight: i < 3 ? B : 'none', borderBottom: B, textAlign: i ? 'right' : 'left' }}>{h}</div>
+                ))}
+              </div>
+              {hsnBreakup(order, inter).map((r, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 0.8fr 0.8fr', fontSize: 10.5 }}>
+                  <div style={{ padding: '4px 6px', borderRight: B, borderBottom: B, fontFamily: "'Geist Mono', monospace" }}>{r.hsn}</div>
+                  <div style={{ padding: '4px 6px', borderRight: B, borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(r.taxable)}</div>
+                  <div style={{ padding: '4px 6px', borderRight: inter ? 'none' : B, borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(inter ? r.tax : r.tax / 2)}</div>
+                  {!inter && <div style={{ padding: '4px 6px', borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(r.tax / 2)}</div>}
+                </div>
+              ))}
+            </div>
             <div>
               <Tax k="Taxable Value" v={amt(taxable)} />
               {inter
