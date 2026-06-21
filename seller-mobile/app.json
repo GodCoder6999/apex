@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "S&D Seller",
+    "slug": "apex-seller-mobile",
+    "owner": "anirbanherbalcure",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "sndseller",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/logo.png",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "in.apex.seller"
+    },
+    "android": {
+      "package": "in.apex.seller",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "S&D Solution uses the camera to scan product barcodes and serials."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ]
+    ],
+    "extra": {
+      "apiBase": "",
+      "eas": {
+        "projectId": "f7989e5b-001e-492a-9a50-0c098eeff404"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f7989e5b-001e-492a-9a50-0c098eeff404"
+    }
+  }
+}
