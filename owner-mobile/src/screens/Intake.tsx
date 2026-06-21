@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { color, radius } from '../theme';
 import { T, Card, Btn, Sheet, useToast, Input } from '../ui';
@@ -11,6 +12,7 @@ import { useProducts, addUnits } from '../data/db';
 export function Intake() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
+  const insets = useSafeAreaInsets();
   const products = useProducts();
   const toast = useToast();
   const [productId, setProductId] = useState(products[0]?.id ?? '');
@@ -40,7 +42,7 @@ export function Intake() {
 
   return (
     <StackScreen title="Add Stock" sub="Scan serials into storage" noScroll>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => setPickOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: color.card, borderWidth: 1, borderColor: color.borderStrong, borderRadius: radius.lg, padding: 14, marginBottom: 14 }}>
           <Icon name="box" size={18} color={color.muted} />
           <T size={14} w="m" style={{ flex: 1 }}>{product?.name ?? 'Select product'}</T>
@@ -83,7 +85,7 @@ export function Intake() {
         </Card>
       </ScrollView>
 
-      <View style={{ padding: 14, borderTopWidth: 1, borderTopColor: color.border, backgroundColor: color.card }}>
+      <View style={{ padding: 14, paddingBottom: 14 + insets.bottom, borderTopWidth: 1, borderTopColor: color.border, backgroundColor: color.card }}>
         <Btn label={`Commit ${rows.length || ''} unit${rows.length === 1 ? '' : 's'}`} icon="save" full onPress={commit} />
       </View>
 

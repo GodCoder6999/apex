@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { color, radius } from '../theme';
 import { font } from '../fonts';
@@ -22,6 +23,7 @@ function lineFrom(productId: string, serial: string, discount: number): OrderLin
 export function Sell() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
+  const insets = useSafeAreaInsets();
   const toast = useToast();
   const units = useUnits();
   const products = useProducts();
@@ -81,7 +83,7 @@ export function Sell() {
 
   return (
     <StackScreen title="New sale" sub="Scan or search to add units" noScroll>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
         {/* scan + search */}
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 6 }}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: color.card, borderWidth: 1, borderColor: 'rgba(16,185,129,0.4)', borderRadius: radius.lg, paddingHorizontal: 12, height: 48 }}>
@@ -155,7 +157,7 @@ export function Sell() {
       </ScrollView>
 
       {/* sticky CTA */}
-      <View style={{ padding: 14, borderTopWidth: 1, borderTopColor: color.border, backgroundColor: color.card }}>
+      <View style={{ padding: 14, paddingBottom: 14 + insets.bottom, borderTopWidth: 1, borderTopColor: color.border, backgroundColor: color.card }}>
         <Btn label={lines.length ? `Charge ${rupee(grandTotal)}` : 'Add items to bill'} icon="wallet" onPress={confirm} full />
       </View>
 
