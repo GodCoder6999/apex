@@ -28,21 +28,28 @@ function downloadBlob(blob: Blob, name: string) {
 
 const hsnOf = (productId: string) => getProducts().find((p) => p.id === productId)?.hsn ?? '—';
 
-/** Aggregate taxable value + tax per HSN/SAC for the GST breakup table. */
-function hsnBreakup(order: Order, _inter: boolean) {
-  const map = new Map<string, { hsn: string; taxable: number; tax: number }>();
-  order.lines.forEach((l) => {
-    const hsn = hsnOf(l.productId);
-    const taxable = l.price - l.discount;
-    const cur = map.get(hsn) ?? { hsn, taxable: 0, tax: 0 };
-    map.set(hsn, { hsn, taxable: cur.taxable + taxable, tax: cur.tax + l.taxAmt });
-  });
-  return [...map.values()];
+function TaxRow3({ k, rate, v }: { k: string; rate: string; v: string }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px 116px', fontSize: 11.5 }}>
+      <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B }}>{k}</div>
+      <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B, textAlign: 'center' }}>{rate}</div>
+      <div style={{ padding: '5px 8px', borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{v}</div>
+    </div>
+  );
+}
+function TaxSpan({ k, v, bold, danger }: { k: string; v: string; bold?: boolean; danger?: boolean }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 116px', fontSize: 11.5 }}>
+      <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B, fontWeight: bold ? 700 : 400, color: danger ? '#E11D48' : '#334155' }}>{k}</div>
+      <div style={{ padding: '5px 8px', borderBottom: B, textAlign: 'right', fontWeight: bold ? 700 : 500, fontFamily: "'Geist Mono', monospace", color: danger ? '#E11D48' : '#0F172A' }}>{v}</div>
+    </div>
+  );
 }
 
 const stateCode = (gstin?: string) => (gstin ? gstin.slice(0, 2) : '');
 const amt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const B = '1px solid #94A3B8'; // hairline like a printed invoice
+const COLS = '36px 1fr 86px 64px 74px 92px 104px'; // Sl·Particulars·HSN·PartNo·Qty·Rate·Amount
 
 export function InvoicePreview({ order, onClose }: { order: Order | null; onClose: () => void }) {
   const settings = useSettings();
@@ -82,7 +89,7 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
     ['Invoice No.', order.invoiceNo],
     ['Date & Time of Supply', dateStr],
     ['Buyer Order No.', '—'],
-    ['Reference No. / Date', '—'],
+    ['RR / GR No.', '—'],
     ['Dispatch Doc No.', '—'],
     ['Dispatched Through', order.method === 'cash' ? 'Counter' : 'Self'],
     ['Terms of Delivery', '—'],
@@ -139,71 +146,71 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
           </div>
 
           {/* items */}
-          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: '34px 1fr 88px 70px 92px 100px', background: '#F1F5F9', fontWeight: 700, fontSize: 11 }}>
-            {['Sl', 'Particulars', 'HSN/SAC', 'Quantity', 'Rate', 'Amount'].map((h, i) => (
-              <div key={h} style={{ padding: '6px 8px', borderRight: i < 5 ? B : 'none', textAlign: i >= 3 ? 'right' : i === 0 ? 'center' : 'left' }}>{h}</div>
+          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: COLS, background: '#F1F5F9', fontWeight: 700, fontSize: 11 }}>
+            {['Sl', 'Particulars', 'HSN/SAC', 'Part No.', 'Quantity', 'Rate', 'Amount'].map((h, i) => (
+              <div key={h} style={{ padding: '6px 8px', borderRight: i < 6 ? B : 'none', textAlign: i >= 4 ? 'right' : i === 0 ? 'center' : 'left' }}>{h}</div>
             ))}
           </div>
           {order.lines.map((l, i) => {
             const rate = l.price - l.discount;
             return (
-              <div key={i} style={{ borderTop: B, display: 'grid', gridTemplateColumns: '34px 1fr 88px 70px 92px 100px', fontSize: 11.5 }}>
+              <div key={i} style={{ borderTop: B, display: 'grid', gridTemplateColumns: COLS, fontSize: 11.5 }}>
                 <div style={{ padding: '6px 8px', borderRight: B, textAlign: 'center' }}>{i + 1}</div>
                 <div style={{ padding: '6px 8px', borderRight: B }}>
                   <div style={{ fontWeight: 600 }}>{l.name}</div>
                   <div style={{ fontSize: 10, color: '#64748B', fontFamily: "'Geist Mono', monospace" }}>SN: {l.serial}</div>
                 </div>
                 <div style={{ padding: '6px 8px', borderRight: B, fontFamily: "'Geist Mono', monospace" }}>{hsnOf(l.productId)}</div>
+                <div style={{ padding: '6px 8px', borderRight: B, textAlign: 'center', color: '#94A3B8' }}>—</div>
                 <div style={{ padding: '6px 8px', borderRight: B, textAlign: 'right' }}>1 Nos.</div>
                 <div style={{ padding: '6px 8px', borderRight: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(rate)}</div>
                 <div style={{ padding: '6px 8px', textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(rate)}</div>
               </div>
             );
           })}
+          {/* filler so short bills still look like a full page */}
+          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: COLS, minHeight: 90 }}>
+            {Array.from({ length: 7 }).map((_, i) => <div key={i} style={{ borderRight: i < 6 ? B : 'none' }} />)}
+          </div>
           {/* total row */}
-          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: '34px 1fr 88px 70px 92px 100px', fontWeight: 700, fontSize: 12 }}>
-            <div style={{ borderRight: B }} /><div style={{ padding: '6px 8px', textAlign: 'right', borderRight: B }}>Total</div>
-            <div style={{ borderRight: B }} /><div style={{ padding: '6px 8px', textAlign: 'right', borderRight: B }}>{order.lines.length} Nos.</div>
-            <div style={{ borderRight: B }} /><div style={{ padding: '6px 8px', textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(taxable)}</div>
+          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: COLS, fontWeight: 700, fontSize: 12 }}>
+            <div style={{ borderRight: B }} />
+            <div style={{ padding: '6px 8px', textAlign: 'right', borderRight: B }}>Total</div>
+            <div style={{ borderRight: B }} /><div style={{ borderRight: B }} />
+            <div style={{ padding: '6px 8px', textAlign: 'right', borderRight: B }}>{order.lines.length} Nos.</div>
+            <div style={{ borderRight: B }} />
+            <div style={{ padding: '6px 8px', textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>₹ {amt(taxable)}</div>
           </div>
 
           {/* amount in words */}
           <div style={{ borderTop: B, padding: 8, fontSize: 11.5 }}>
-            <span style={{ color: '#475569' }}>Amount Chargeable (in words): </span>
-            <span style={{ fontWeight: 700 }}>{rupeesInWords(order.grandTotal)}</span>
+            <div style={{ color: '#475569' }}>Amount Chargeable (in words)</div>
+            <div style={{ fontWeight: 700 }}>{rupeesInWords(order.grandTotal)}</div>
           </div>
 
-          {/* tax summary */}
-          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: '1fr 320px' }}>
-            {/* HSN/SAC-wise tax breakup (fills the left, GST-standard) */}
-            <div style={{ borderRight: B }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 0.8fr 0.8fr', background: '#F1F5F9', fontWeight: 700, fontSize: 10 }}>
-                {['HSN/SAC', 'Taxable', inter ? 'IGST' : 'CGST', inter ? '' : 'SGST'].map((h, i) => (
-                  <div key={i} style={{ padding: '4px 6px', borderRight: i < 3 ? B : 'none', borderBottom: B, textAlign: i ? 'right' : 'left' }}>{h}</div>
-                ))}
-              </div>
-              {hsnBreakup(order, inter).map((r, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 0.8fr 0.8fr', fontSize: 10.5 }}>
-                  <div style={{ padding: '4px 6px', borderRight: B, borderBottom: B, fontFamily: "'Geist Mono', monospace" }}>{r.hsn}</div>
-                  <div style={{ padding: '4px 6px', borderRight: B, borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(r.taxable)}</div>
-                  <div style={{ padding: '4px 6px', borderRight: inter ? 'none' : B, borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(inter ? r.tax : r.tax / 2)}</div>
-                  {!inter && <div style={{ padding: '4px 6px', borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{amt(r.tax / 2)}</div>}
-                </div>
-              ))}
-            </div>
+          {/* tax summary: blank left + reference 3-col table on the right */}
+          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: '1fr 360px' }}>
+            <div style={{ borderRight: B }} />
             <div>
-              <Tax k="Taxable Value" v={amt(taxable)} />
-              {inter
-                ? <Tax k={`IGST @ ${gstPct}%`} v={amt(order.taxTotal)} />
-                : <><Tax k={`CGST @ ${gstPct / 2}%`} v={amt(half)} /><Tax k={`SGST/UTGST @ ${gstPct / 2}%`} v={amt(half)} /></>}
-              <Tax k="Total Tax Amount" v={amt(order.taxTotal)} />
-              <Tax k="Net Amount (incl. all taxes)" v={amt(order.grandTotal)} bold />
-              <Tax k="Paid" v={amt(order.paidNow)} />
-              {order.due > 0 && <Tax k="Balance Due" v={amt(order.due)} bold danger />}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px 116px', background: '#EEF2FF', fontWeight: 700, fontSize: 11 }}>
+                <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B }}>Taxable Value</div>
+                <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B, textAlign: 'center' }}>Rate</div>
+                <div style={{ padding: '5px 8px', borderBottom: B, textAlign: 'right' }}>Amount</div>
+              </div>
+              {inter ? (
+                <TaxRow3 k="IGST" rate={`${gstPct}%`} v={amt(order.taxTotal)} />
+              ) : (
+                <><TaxRow3 k="CGST" rate={`${gstPct / 2}%`} v={amt(half)} />
+                  <TaxRow3 k="SGST/UTGST" rate={`${gstPct / 2}%`} v={amt(half)} /></>
+              )}
+              <TaxSpan k="Total Tax Amount" v={amt(order.taxTotal)} />
+              <TaxSpan k="Net Amount (Including all Taxes)" v={amt(order.grandTotal)} bold />
+              <TaxSpan k="Paid" v={amt(order.paidNow)} />
+              {order.due > 0 && <TaxSpan k="Balance Due" v={amt(order.due)} bold danger />}
             </div>
           </div>
-          <div style={{ borderTop: B, padding: 8, fontSize: 11 }}>
-            <span style={{ color: '#475569' }}>Tax Amount (in words): </span><span style={{ fontWeight: 600 }}>{rupeesInWords(order.taxTotal)}</span>
+          <div style={{ borderTop: B, padding: 8, fontSize: 11.5 }}>
+            <span style={{ color: '#475569' }}>Total Amount (in words): </span><span style={{ fontWeight: 700 }}>{rupeesInWords(order.grandTotal)}</span>
           </div>
 
           {/* footer / signatory */}
@@ -224,14 +231,6 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
   );
 }
 
-function Tax({ k, v, bold, danger }: { k: string; v: string; bold?: boolean; danger?: boolean }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', borderBottom: B }}>
-      <div style={{ padding: '5px 8px', borderRight: B, fontSize: 11.5, fontWeight: bold ? 700 : 400, color: danger ? '#E11D48' : '#334155' }}>{k}</div>
-      <div style={{ padding: '5px 8px', fontSize: 11.5, textAlign: 'right', fontWeight: bold ? 700 : 500, fontFamily: "'Geist Mono', monospace", color: danger ? '#E11D48' : '#0F172A' }}>{v}</div>
-    </div>
-  );
-}
 
 function ActionBtn({ icon, label, onClick, tint }: { icon: 'wa' | 'mail' | 'download' | 'print'; label: string; onClick: () => void; tint?: string }) {
   return (
