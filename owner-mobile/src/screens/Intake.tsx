@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { color, radius } from '../theme';
 import { T, Card, Btn, Sheet, useToast, Input } from '../ui';
 import { Icon } from '../icons';
@@ -10,6 +10,7 @@ import { useProducts, addUnits } from '../data/db';
 
 export function Intake() {
   const nav = useNavigation<any>();
+  const route = useRoute<any>();
   const products = useProducts();
   const toast = useToast();
   const [productId, setProductId] = useState(products[0]?.id ?? '');
@@ -20,9 +21,18 @@ export function Intake() {
 
   const add = (serial: string) => {
     const s = serial.trim(); if (!s) return;
-    if (rows.some((r) => r.serial === s)) { toast('Already added', 'err'); return; }
+    if (rows.some((r) => r.serial === s)) { toast('Already in batch', 'err'); return; }
     setRows((r) => [{ serial: s, cost: product?.costPrice ?? 0 }, ...r]); setScan('');
   };
+
+  // serial returned from the Scan screen (intake mode)
+  useEffect(() => {
+    const s = route.params?.addSerial as string | undefined;
+    if (!s) return;
+    add(s);
+    nav.setParams({ addSerial: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.addSerial]);
   const commit = () => {
     if (!productId || rows.length === 0) { toast('Scan a serial', 'err'); return; }
     const n = addUnits(productId, rows); toast(`${n} unit${n > 1 ? 's' : ''} added`); setRows([]);
@@ -47,6 +57,9 @@ export function Intake() {
               style={{ flex: 1, backgroundColor: '#fff', borderColor: 'rgba(16,185,129,0.3)' }} />
             <Btn label="Add" icon="plus" variant="accent" onPress={() => add(scan)} />
           </View>
+          <Pressable onPress={() => nav.navigate('Scan', { mode: 'intake' })} style={{ marginTop: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: radius.lg, backgroundColor: color.accentDeep }}>
+            <Icon name="scan" size={18} color="#fff" /><T w="s" size={13.5} c="#fff">Scan with camera</T>
+          </Pressable>
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 8 }}>

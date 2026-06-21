@@ -9,7 +9,7 @@ import { Icon } from '../icons';
 import { Money } from '../components';
 import { getUnits, getProducts, categoryName } from '../data/db';
 
-type Mode = 'sell' | 'lookup';
+type Mode = 'sell' | 'lookup' | 'intake';
 
 export function Scan() {
   const nav = useNavigation<any>();
@@ -24,6 +24,8 @@ export function Scan() {
   const resolve = (code: string) => {
     const s = code.trim();
     if (!s) return;
+    // Intake: just capture the raw serial back into Add Stock.
+    if (mode === 'intake') { nav.navigate('Intake', { addSerial: s }); return; }
     const unit = getUnits().find((u) => u.serial.toLowerCase() === s.toLowerCase());
     const prod = unit ? getProducts().find((p) => p.id === unit.productId)
       : getProducts().find((p) => p.barcode === s);
@@ -68,12 +70,17 @@ export function Scan() {
         <View style={{ position: 'absolute', top: insets.top + 8, left: 14, right: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Pressable onPress={() => nav.goBack()} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="x" size={20} color="#fff" stroke={2} /></Pressable>
-          <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 999, padding: 3 }}>
-            {(['sell', 'lookup'] as Mode[]).map((mm) => (
-              <Pressable key={mm} onPress={() => setMode(mm)} style={{ paddingHorizontal: 16, height: 32, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: mode === mm ? color.accent : 'transparent' }}>
-                <T w="s" size={12.5} c={mode === mm ? '#04140d' : '#E2E8F0'}>{mm === 'sell' ? 'Sell' : 'Look up'}</T></Pressable>
-            ))}
-          </View>
+          {mode === 'intake' ? (
+            <View style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 999, paddingHorizontal: 16, height: 32, justifyContent: 'center' }}>
+              <T w="s" size={12.5} c="#E2E8F0">Add stock</T></View>
+          ) : (
+            <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 999, padding: 3 }}>
+              {(['sell', 'lookup'] as Mode[]).map((mm) => (
+                <Pressable key={mm} onPress={() => setMode(mm)} style={{ paddingHorizontal: 16, height: 32, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: mode === mm ? color.accent : 'transparent' }}>
+                  <T w="s" size={12.5} c={mode === mm ? '#04140d' : '#E2E8F0'}>{mm === 'sell' ? 'Sell' : 'Look up'}</T></Pressable>
+              ))}
+            </View>
+          )}
           <View style={{ width: 40 }} />
         </View>
       </View>

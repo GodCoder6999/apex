@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -86,15 +86,18 @@ function ProductSheet({ target, onClose }: { target: Product | 'new' | null; onC
   const [edit, setEdit] = useState(false);
   const [f, setF] = useState<Partial<Product>>({});
 
-  // initialise when opening
+  // initialise when opening (effect — never set state during render)
   const open = target != null;
   const key = product?.id ?? (isNew ? 'new' : '');
-  useMemo(() => {
+  useEffect(() => {
+    if (!open) return;
     setF(product ?? { gstRate: 18, active: true, categoryId: categories[0]?.id });
-    setEdit(isNew);
+    setEdit(false);
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
+  // Show the form for a brand-new product OR when editing an existing one.
+  const showForm = isNew || edit;
   const set = (k: keyof Product, v: any) => setF((s) => ({ ...s, [k]: v }));
   const pickImage = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5, base64: true });
@@ -107,7 +110,7 @@ function ProductSheet({ target, onClose }: { target: Product | 'new' | null; onC
     toast(product ? 'Product updated' : 'Product added'); onClose();
   };
 
-  if (edit) {
+  if (showForm) {
     return (
       <Sheet open onClose={onClose} title={product ? 'Edit product' : 'New product'}>
         <Field label="Photo (optional)">
