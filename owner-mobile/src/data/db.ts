@@ -16,7 +16,7 @@ interface DB {
   customers: Customer[]; sellers: Seller[]; orders: Order[]; payments: Payment[]; enquiries: Enquiry[];
 }
 
-const KEY = 'snd-db-v3';
+const KEY = 'snd-db-v4';
 function fresh(): DB {
   return {
     settings: seed.settings, categories: seed.categories, products: seed.products, units: seed.units,

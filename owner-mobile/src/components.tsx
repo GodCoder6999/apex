@@ -4,11 +4,13 @@ import { type ReactNode } from 'react';
 import { View, ScrollView, Pressable, Image, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { color, radius } from './theme';
 import { Icon, type IconName } from './icons';
 import { T, Card } from './ui';
 import { rupee, initials, rupeesInWords } from './format';
-import type { Order } from './data/types';
+import type { Order, BusinessSettings } from './data/types';
 import { useSettings, getCustomers, getProducts, customerName } from './data/db';
 
 const hsnOf = (productId: string) => getProducts().find((p) => p.id === productId)?.hsn ?? '—';
@@ -113,11 +115,113 @@ export function RowCard({ children, onPress, style }: { children: ReactNode; onP
   );
 }
 
-// ---------- Invoice share (RN: Share sheet for WhatsApp/email/etc.) ----------
-export function shareInvoice(order: Order, businessName: string) {
-  const lines = order.lines.map((l) => `• ${l.name} (${l.serial}) — ${rupee(l.lineTotal)}`).join('\n');
-  const msg = `${businessName}\nInvoice ${order.invoiceNo}\n${lines}\n\nTotal ${rupee(order.grandTotal)} · Paid ${rupee(order.paidNow)} · Due ${rupee(order.due)}`;
-  Share.share({ message: msg }).catch(() => {});
+// ---------- Invoice share: render the classic invoice to a PDF and share the
+// file (so WhatsApp / Gmail attach the real invoice, not plain text). ----------
+export async function shareInvoice(order: Order, settings: BusinessSettings) {
+  try {
+    const html = invoiceHTML(order, settings);
+    const { uri } = await Print.printToFileAsync({ html, base64: false });
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Invoice ${order.invoiceNo}`, UTI: 'com.adobe.pdf' });
+    } else {
+      await Share.share({ url: uri, message: `Invoice ${order.invoiceNo}` });
+    }
+  } catch {
+    // last-resort text share
+    await Share.share({ message: `${settings.name} — Invoice ${order.invoiceNo} · Total ${rupee(order.grandTotal)}` }).catch(() => {});
+  }
+}
+
+function invoiceHTML(order: Order, settings: BusinessSettings): string {
+  const customer = getCustomers().find((c) => c.id === order.customerId);
+  const inter = !!customer?.gstin && customer.gstin.slice(0, 2) !== settings.gstin.slice(0, 2);
+  const taxable = order.subTotal - order.discountTotal;
+  const half = order.taxTotal / 2;
+  const gst = taxable > 0 ? Math.round((order.taxTotal / taxable) * 100) : 0;
+  const d = new Date(order.createdAt);
+  const dateStr = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+  const money = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const code = customer?.gstin ? customer.gstin.slice(0, 2) : '';
+  const rows = order.lines.map((l, i) => {
+    const rate = l.price - l.discount;
+    return `<tr>
+      <td class="c">${i + 1}</td>
+      <td><b>${l.name}</b><div class="sn">SN: ${l.serial}</div></td>
+      <td class="r mono">${hsnOf(l.productId)}</td>
+      <td class="r">1 Nos.</td>
+      <td class="r mono">${money(rate)}</td>
+      <td class="r mono">${money(rate)}</td>
+    </tr>`;
+  }).join('');
+  const taxRows = inter
+    ? `<tr><td>IGST @ ${gst}%</td><td class="r mono">${money(order.taxTotal)}</td></tr>`
+    : `<tr><td>CGST @ ${gst / 2}%</td><td class="r mono">${money(half)}</td></tr>
+       <tr><td>SGST/UTGST @ ${gst / 2}%</td><td class="r mono">${money(half)}</td></tr>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
+  <style>
+    *{box-sizing:border-box} body{font-family:-apple-system,Roboto,Arial,sans-serif;color:#0F172A;margin:0;padding:18px;font-size:12px}
+    .title{text-align:center;font-weight:800;letter-spacing:2px;margin-bottom:8px;font-size:15px}
+    table{width:100%;border-collapse:collapse}
+    .box{border:1px solid #475569}
+    .row{display:flex} .pad{padding:8px}
+    td,th{border:1px solid #475569;padding:6px 8px;vertical-align:top}
+    .c{text-align:center}.r{text-align:right}.mono{font-family:'Courier New',monospace}
+    .sn{font-size:9px;color:#64748B;font-family:'Courier New',monospace}
+    .muted{color:#475569;font-size:11px}.b{font-weight:700}
+    .seller b{font-size:15px}
+    .meta td:first-child{color:#475569;width:48%}
+    .items th{background:#F1F5F9;font-size:11px}
+    .totrow td{font-weight:700}
+    .words{font-size:11px}
+  </style></head><body>
+    <div class="title">TAX INVOICE</div>
+    <div class="box">
+      <div class="row">
+        <div class="pad seller" style="flex:1.3;border-right:1px solid #475569">
+          <b>${settings.name}</b>
+          <div class="muted">${settings.address}</div>
+          <div class="muted">E-Mail: owner@sndsolution.in</div>
+          <div class="b">GSTIN: ${settings.gstin}</div>
+          <div class="muted">State Name: ${settings.state}</div>
+        </div>
+        <div style="flex:1">
+          <table class="meta">
+            <tr><td>Invoice No.</td><td class="b mono">${order.invoiceNo}</td></tr>
+            <tr><td>Date &amp; Time of Supply</td><td class="b">${dateStr}</td></tr>
+            <tr><td>Dispatched Through</td><td class="b">${order.method === 'cash' ? 'Counter' : 'Self'}</td></tr>
+            <tr><td>Terms of Delivery</td><td>—</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="pad" style="border-top:1px solid #475569">
+        <span class="muted">Buyer (Bill to)</span>
+        <div class="b" style="font-size:14px">${customerName(order.customerId)}</div>
+        ${customer?.address ? `<div class="muted">${customer.address}</div>` : ''}
+        ${customer?.gstin ? `<div class="b">GSTIN: ${customer.gstin}</div>` : ''}
+        <div class="muted">State Name: ${settings.state}${code ? `, Code: ${code}` : ''}</div>
+      </div>
+      <table class="items">
+        <tr><th class="c">Sl</th><th>Particulars</th><th class="r">HSN/SAC</th><th class="r">Quantity</th><th class="r">Rate</th><th class="r">Amount</th></tr>
+        ${rows}
+        <tr class="totrow"><td colspan="3" class="r">Total</td><td class="r">${order.lines.length} Nos.</td><td></td><td class="r mono">${money(taxable)}</td></tr>
+      </table>
+      <div class="pad" style="border-top:1px solid #475569">
+        <span class="muted">Amount Chargeable (in words):</span> <b>${rupeesInWords(order.grandTotal)}</b>
+      </div>
+      <table>
+        <tr><td>Taxable Value</td><td class="r mono">${money(taxable)}</td></tr>
+        ${taxRows}
+        <tr class="totrow"><td>Net Amount (incl. all taxes)</td><td class="r mono">${money(order.grandTotal)}</td></tr>
+        <tr><td>Paid</td><td class="r mono">${money(order.paidNow)}</td></tr>
+        ${order.due > 0 ? `<tr><td class="b" style="color:#E11D48">Balance Due</td><td class="r mono b" style="color:#E11D48">${money(order.due)}</td></tr>` : ''}
+      </table>
+      <div class="pad" style="border-top:1px solid #475569;text-align:right">
+        <div class="b">For ${settings.name}</div>
+        <div class="muted" style="margin-top:28px">Authorised Signatory</div>
+      </div>
+    </div>
+    <div style="text-align:center;color:#94A3B8;font-size:10px;margin-top:6px">This is a computer-generated invoice.</div>
+  </body></html>`;
 }
 
 // ---------- Classic GST Tax Invoice (used inside a Sheet) ----------

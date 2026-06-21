@@ -188,7 +188,7 @@ export function Sell() {
         {generated && <>
           <InvoiceBody order={generated} />
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-            <Btn label="Share" icon="wa" variant="accent" full onPress={() => shareInvoice(generated, settings.name)} />
+            <Btn label="Share PDF" icon="wa" variant="accent" full onPress={() => shareInvoice(generated, settings)} />
             <Btn label="Done" variant="ghost" full onPress={() => { setGenerated(null); nav.goBack(); }} />
           </View>
         </>}

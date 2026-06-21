@@ -115,13 +115,13 @@ function mkOrder(
 }
 
 export const orders: Order[] = [
-  mkOrder('o-1', 'APX/26-27/0042', 'cu-1', 's-1', [['p-1', 4000], ['p-14', 0]], 1, 'online', 0),
-  mkOrder('o-2', 'APX/26-27/0041', 'cu-3', 's-2', [['p-4', 2500]], 0.5, 'split', 0),
-  mkOrder('o-3', 'APX/26-27/0040', 'cu-2', 'owner', [['p-6', 0], ['p-7', 500]], 1, 'cash', 1),
-  mkOrder('o-4', 'APX/26-27/0039', 'cu-4', 's-1', [['p-15', 900]], 0, 'cash', 1),
-  mkOrder('o-5', 'APX/26-27/0038', 'cu-5', 's-3', [['p-12', 0], ['p-13', 0]], 1, 'online', 2),
-  mkOrder('o-6', 'APX/26-27/0037', 'cu-1', 's-2', [['p-9', 3000]], 0.6, 'split', 3),
-  mkOrder('o-7', 'APX/26-27/0036', 'cu-6', 'owner', [['p-10', 0]], 1, 'cash', 4),
+  mkOrder('o-1', 'SND/26-27/0042', 'cu-1', 's-1', [['p-1', 4000], ['p-14', 0]], 1, 'online', 0),
+  mkOrder('o-2', 'SND/26-27/0041', 'cu-3', 's-2', [['p-4', 2500]], 0.5, 'split', 0),
+  mkOrder('o-3', 'SND/26-27/0040', 'cu-2', 'owner', [['p-6', 0], ['p-7', 500]], 1, 'cash', 1),
+  mkOrder('o-4', 'SND/26-27/0039', 'cu-4', 's-1', [['p-15', 900]], 0, 'cash', 1),
+  mkOrder('o-5', 'SND/26-27/0038', 'cu-5', 's-3', [['p-12', 0], ['p-13', 0]], 1, 'online', 2),
+  mkOrder('o-6', 'SND/26-27/0037', 'cu-1', 's-2', [['p-9', 3000]], 0.6, 'split', 3),
+  mkOrder('o-7', 'SND/26-27/0036', 'cu-6', 'owner', [['p-10', 0]], 1, 'cash', 4),
 ];
 
 export const payments: Payment[] = orders

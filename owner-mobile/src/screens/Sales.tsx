@@ -52,7 +52,7 @@ export function Sales() {
         {open && <>
           <InvoiceBody order={open} />
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-            <Btn label="Share" icon="wa" variant="accent" full onPress={() => shareInvoice(open, settings.name)} />
+            <Btn label="Share PDF" icon="wa" variant="accent" full onPress={() => shareInvoice(open, settings)} />
             <Btn label="Close" variant="ghost" full onPress={() => setOpen(null)} />
           </View>
         </>}

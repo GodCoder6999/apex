@@ -28,7 +28,7 @@ interface DB {
   enquiries: Enquiry[];
 }
 
-export const DB_KEY = 'snd-db-v3';
+export const DB_KEY = 'snd-db-v4';
 const KEY = DB_KEY;
 
 function fresh(): DB {
