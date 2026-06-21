@@ -4,6 +4,7 @@ import {
   View, Text as RNText, TextInput, Pressable, Modal, Animated, ScrollView,
   type TextStyle, type ViewStyle, type StyleProp, type TextInputProps,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, radius } from './theme';
 import { badge as badgeMap } from './theme';
 import { font } from './fonts';
@@ -106,11 +107,12 @@ export function Chip({ label, active, onPress, count }: { label: string; active:
 
 // ---------- Bottom Sheet ----------
 export function Sheet({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: ReactNode; title?: string }) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(11,18,32,0.45)' }} />
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: color.card,
-        borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '90%', paddingBottom: 28 }}>
+        borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '90%', paddingBottom: 18 + insets.bottom }}>
         <View style={{ alignItems: 'center', paddingTop: 10 }}><View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#CBD5E1' }} /></View>
         {title != null && (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 }}>

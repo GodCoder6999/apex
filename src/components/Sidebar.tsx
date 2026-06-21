@@ -24,15 +24,15 @@ export function Sidebar() {
     }}>
       {/* brand */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '20px 20px 16px' }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(150deg,#10B981,#059669)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#04140d',
-          boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }}>
-          <Icon name="bolt" size={18} fill="currentColor" stroke="none" />
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+          boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="S&D Solution" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div style={{ lineHeight: 1.1 }}>
-          <div style={{ color: '#F8FAFC', fontSize: 15, fontWeight: 650, letterSpacing: '-0.02em' }}>Apex</div>
+          <div style={{ color: '#F8FAFC', fontSize: 15, fontWeight: 650, letterSpacing: '-0.02em' }}>S&amp;D</div>
           <div style={{ color: '#475569', fontSize: 10.5, fontWeight: 500, letterSpacing: '0.14em',
-            textTransform: 'uppercase', marginTop: 1 }}>Electronics</div>
+            textTransform: 'uppercase', marginTop: 1 }}>Solution</div>
         </div>
       </div>
 

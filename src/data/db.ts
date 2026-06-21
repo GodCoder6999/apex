@@ -28,7 +28,7 @@ interface DB {
   enquiries: Enquiry[];
 }
 
-export const DB_KEY = 'apex-db-v2';
+export const DB_KEY = 'snd-db-v3';
 const KEY = DB_KEY;
 
 function fresh(): DB {

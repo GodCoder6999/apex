@@ -47,9 +47,9 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
       <div id="invoice-print" style={{ padding: 34, background: '#fff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 26 }}>
           <div style={{ display: 'flex', gap: 13, alignItems: 'center' }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(150deg,#10B981,#059669)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#04140d' }}>
-              <Icon name="bolt" size={22} fill="currentColor" stroke="none" /></div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: `1px solid ${color.border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
             <div>
               <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>{settings.name}</div>
               <div style={{ fontSize: 12, color: color.muted, marginTop: 2, maxWidth: 280 }}>{settings.address}</div>

@@ -8,12 +8,12 @@ const DAY = 86_400_000;
 const now = Date.UTC(2026, 5, 18, 13, 0, 0); // Thu 18 Jun 2026, matches mockup
 
 export const settings: BusinessSettings = {
-  name: 'Apex Electronics',
+  name: 'S&D Solution',
   address: '14 Lindsay Street, New Market, Kolkata 700087',
   gstin: '19ABCDE1234F1Z5',
   state: 'West Bengal',
   phone: '+91 98300 11223',
-  invoicePrefix: 'APX',
+  invoicePrefix: 'SND',
   taxDefault: 18,
 };
 

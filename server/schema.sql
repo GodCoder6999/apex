@@ -135,8 +135,8 @@ CREATE TABLE IF NOT EXISTS counters (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO settings (id, name, address, gstin, state, phone, invoice_prefix, tax_default)
-VALUES (1, 'Apex Electronics', '14 Lindsay Street, New Market, Kolkata 700087',
-        '19ABCDE1234F1Z5', 'West Bengal', '+91 98300 11223', 'APX', 18)
+VALUES (1, 'S&D Solution', '14 Lindsay Street, New Market, Kolkata 700087',
+        '19ABCDE1234F1Z5', 'West Bengal', '+91 98300 11223', 'SND', 18)
 ON DUPLICATE KEY UPDATE id = id;
 
 INSERT INTO counters (name, value) VALUES ('invoice', 38)

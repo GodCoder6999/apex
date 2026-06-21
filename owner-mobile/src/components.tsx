@@ -128,8 +128,7 @@ export function InvoiceBody({ order }: { order: Order }) {
     <View style={{ paddingBottom: 10 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', flex: 1 }}>
-          <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: color.accentDeep, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="bolt" size={20} fill="#04140d" /></View>
+          <Image source={require('../assets/logo.png')} style={{ width: 38, height: 38, borderRadius: 9 }} resizeMode="contain" />
           <View style={{ flex: 1 }}>
             <T w="b" size={16}>{settings.name}</T>
             <T size={10.5} c={color.muted} mono>GSTIN {settings.gstin}</T>

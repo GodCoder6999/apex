@@ -182,7 +182,7 @@ function createOrder(array $SCHEMA): void {
     $pdo->exec("UPDATE counters SET value = value + 1 WHERE name = 'invoice'");
     $seq = (int)$pdo->query("SELECT value FROM counters WHERE name = 'invoice'")->fetchColumn();
     $prefix = (string)$pdo->query('SELECT invoice_prefix FROM settings WHERE id = 1')->fetchColumn();
-    $invoiceNo = sprintf('%s/26-27/%04d', $prefix ?: 'APX', $seq);
+    $invoiceNo = sprintf('%s/26-27/%04d', $prefix ?: 'SND', $seq);
 
     $subTotal = array_sum(array_map(fn($l) => (float)$l['price'], $lines));
     $lineDisc = array_sum(array_map(fn($l) => (float)($l['discount'] ?? 0), $lines));
