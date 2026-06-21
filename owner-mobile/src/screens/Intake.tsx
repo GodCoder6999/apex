@@ -83,11 +83,11 @@ export function Intake() {
           <Row k="Cost / unit" v={rupee(product?.costPrice ?? 0)} />
           <Row k="Total cost" v={rupee((product?.costPrice ?? 0) * rows.length)} />
         </Card>
-      </ScrollView>
 
-      <View style={{ padding: 14, paddingBottom: 14 + insets.bottom, borderTopWidth: 1, borderTopColor: color.border, backgroundColor: color.card }}>
-        <Btn label={`Commit ${rows.length || ''} unit${rows.length === 1 ? '' : 's'}`} icon="save" full onPress={commit} />
-      </View>
+        <Btn label={`Commit ${rows.length || ''} unit${rows.length === 1 ? '' : 's'} to stock`} icon="save" full
+          style={{ marginTop: 16, height: 50 }} onPress={commit} />
+        <View style={{ height: insets.bottom + 8 }} />
+      </ScrollView>
 
       <Sheet open={pickOpen} onClose={() => setPickOpen(false)} title="Select product">
         <View style={{ gap: 6 }}>

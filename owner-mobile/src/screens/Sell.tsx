@@ -154,12 +154,11 @@ export function Sell() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><T w="b" size={17}>Grand total</T><Money value={grandTotal} size={17} w="b" /></View>
           </Card>
         )}
-      </ScrollView>
 
-      {/* sticky CTA */}
-      <View style={{ padding: 14, paddingBottom: 14 + insets.bottom, borderTopWidth: 1, borderTopColor: color.border, backgroundColor: color.card }}>
-        <Btn label={lines.length ? `Charge ${rupee(grandTotal)}` : 'Add items to bill'} icon="wallet" onPress={confirm} full />
-      </View>
+        <Btn label={lines.length ? `Charge ${rupee(grandTotal)}` : 'Add items to bill'} icon="wallet" onPress={confirm} full
+          style={{ marginTop: 16, height: 50 }} />
+        <View style={{ height: insets.bottom + 8 }} />
+      </ScrollView>
 
       {/* customer sheet */}
       <CustomerSheet open={custOpen} onClose={() => setCustOpen(false)} onPick={(id) => { setCustomerId(id); setCustOpen(false); }} />
