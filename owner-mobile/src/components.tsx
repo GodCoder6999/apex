@@ -7,9 +7,11 @@ import { useNavigation } from '@react-navigation/native';
 import { color, radius } from './theme';
 import { Icon, type IconName } from './icons';
 import { T, Card } from './ui';
-import { rupee, initials } from './format';
+import { rupee, initials, rupeesInWords } from './format';
 import type { Order } from './data/types';
-import { useSettings, getCustomers, customerName } from './data/db';
+import { useSettings, getCustomers, getProducts, customerName } from './data/db';
+
+const hsnOf = (productId: string) => getProducts().find((p) => p.id === productId)?.hsn ?? '—';
 
 // ---------- Tab screen: dark top bar + light scroll body ----------
 export function TabScreen({ title, sub, children, scan }: { title: string; sub?: string; children: ReactNode; scan?: boolean }) {
@@ -118,63 +120,125 @@ export function shareInvoice(order: Order, businessName: string) {
   Share.share({ message: msg }).catch(() => {});
 }
 
-// ---------- Invoice preview content (used inside a Sheet) ----------
+// ---------- Classic GST Tax Invoice (used inside a Sheet) ----------
+const BC = '#94A3B8'; // hairline
+const amt2 = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export function InvoiceBody({ order }: { order: Order }) {
   const settings = useSettings();
   const customer = getCustomers().find((c) => c.id === order.customerId);
   const inter = !!customer?.gstin && customer.gstin.slice(0, 2) !== settings.gstin.slice(0, 2);
+  const taxable = order.subTotal - order.discountTotal;
   const half = order.taxTotal / 2;
+  const gstPct = taxable > 0 ? Math.round((order.taxTotal / taxable) * 100) : 0;
+  const d = new Date(order.createdAt);
+  const dateStr = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+  const code = customer?.gstin ? customer.gstin.slice(0, 2) : '';
+
   return (
-    <View style={{ paddingBottom: 10 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', flex: 1 }}>
-          <Image source={require('../assets/logo.png')} style={{ width: 38, height: 38, borderRadius: 9 }} resizeMode="contain" />
+    <View style={{ paddingBottom: 6 }}>
+      <T center w="b" size={12} style={{ letterSpacing: 1.5, marginBottom: 6 }}>TAX INVOICE</T>
+      <View style={{ borderWidth: 1, borderColor: BC }}>
+        {/* seller */}
+        <View style={{ flexDirection: 'row', padding: 8, gap: 8, borderBottomWidth: 1, borderBottomColor: BC }}>
+          <Image source={require('../assets/logo.png')} style={{ width: 34, height: 34 }} resizeMode="contain" />
           <View style={{ flex: 1 }}>
-            <T w="b" size={16}>{settings.name}</T>
-            <T size={10.5} c={color.muted} mono>GSTIN {settings.gstin}</T>
+            <T w="b" size={14}>{settings.name}</T>
+            <T size={10.5} c={color.body}>{settings.address}</T>
+            <T size={10.5} w="s">GSTIN: {settings.gstin}</T>
+            <T size={10.5} c={color.body}>State: {settings.state}</T>
           </View>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <T w="b" size={13}>TAX INVOICE</T>
-          <T size={11} c={color.muted} mono>{order.invoiceNo}</T>
+        {/* meta */}
+        <MetaRow k="Invoice No." v={order.invoiceNo} mono first />
+        <MetaRow k="Date & Time of Supply" v={dateStr} />
+        <MetaRow k="Dispatched Through" v={order.method === 'cash' ? 'Counter' : 'Self'} />
+        {/* buyer */}
+        <View style={{ padding: 8, borderTopWidth: 1, borderTopColor: BC }}>
+          <T size={9.5} c={color.faint} w="s" style={{ textTransform: 'uppercase' }}>Buyer (Bill to)</T>
+          <T w="b" size={13} style={{ marginTop: 1 }}>{customerName(order.customerId)}</T>
+          {!!customer?.address && <T size={10.5} c={color.body}>{customer.address}</T>}
+          {!!customer?.gstin && <T size={10.5} w="s">GSTIN: {customer.gstin}</T>}
+          <T size={10.5} c={color.body}>State: {settings.state}{code ? `, Code: ${code}` : ''}</T>
         </View>
-      </View>
 
-      <RowCard style={{ marginBottom: 14 }}>
-        <T size={10.5} c={color.faint} w="s" style={{ textTransform: 'uppercase' }}>Billed to</T>
-        <T w="s" size={14} style={{ marginTop: 2 }}>{customerName(order.customerId)}</T>
-        {!!customer?.gstin && <T size={11} c={color.muted} mono>GSTIN {customer.gstin}</T>}
-      </RowCard>
-
-      <View style={{ borderWidth: 1, borderColor: color.border, borderRadius: radius.lg, overflow: 'hidden', marginBottom: 14 }}>
-        {order.lines.map((l, i) => (
-          <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 11, borderTopWidth: i ? 1 : 0, borderTopColor: color.hairline }}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <T w="s" size={12.5} numberOfLines={1}>{l.name}</T>
-              <T size={10.5} c={color.faint} mono>SN {l.serial} · GST {l.gstRate}%</T>
+        {/* items header */}
+        <View style={{ flexDirection: 'row', backgroundColor: '#F1F5F9', borderTopWidth: 1, borderTopColor: BC }}>
+          <Cell w={22} bold center>#</Cell>
+          <Cell flex bold>Particulars</Cell>
+          <Cell w={52} bold right>HSN</Cell>
+          <Cell w={64} bold right last>Amount</Cell>
+        </View>
+        {order.lines.map((l, i) => {
+          const rate = l.price - l.discount;
+          return (
+            <View key={i} style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: BC }}>
+              <Cell w={22} center>{String(i + 1)}</Cell>
+              <View style={{ flex: 1, padding: 6, borderRightWidth: 1, borderRightColor: BC }}>
+                <T size={11} w="s">{l.name}</T>
+                <T size={9} c={color.faint} mono>SN: {l.serial}</T>
+                <T size={9.5} c={color.muted}>1 Nos. × {amt2(rate)}</T>
+              </View>
+              <Cell w={52} right mono>{hsnOf(l.productId)}</Cell>
+              <Cell w={64} right mono last>{amt2(rate)}</Cell>
             </View>
-            <Money value={l.lineTotal} size={12.5} />
-          </View>
-        ))}
-      </View>
+          );
+        })}
+        {/* total */}
+        <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: BC }}>
+          <Cell flex right bold>Total ({order.lines.length} Nos.)</Cell>
+          <Cell w={64} right bold mono last>{amt2(taxable)}</Cell>
+        </View>
 
-      <View style={{ gap: 5 }}>
-        <RowKV k="Subtotal" v={rupee(order.subTotal)} />
-        {order.discountTotal > 0 && <RowKV k="Discount" v={'−' + rupee(order.discountTotal)} />}
-        {inter ? <RowKV k="IGST" v={rupee(order.taxTotal)} /> : (<><RowKV k="CGST" v={rupee(half)} /><RowKV k="SGST" v={rupee(half)} /></>)}
-        <View style={{ height: 1, backgroundColor: color.ink, marginVertical: 6 }} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <T w="b" size={16}>Grand total</T><Money value={order.grandTotal} size={16} w="b" />
+        {/* words */}
+        <View style={{ padding: 8, borderTopWidth: 1, borderTopColor: BC }}>
+          <T size={9.5} c={color.faint}>Amount Chargeable (in words):</T>
+          <T size={11} w="b">{rupeesInWords(order.grandTotal)}</T>
         </View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <T size={12.5} c={color.accentDeep} w="s">Paid</T><Money value={order.paidNow} size={12.5} c={color.accentDeep} />
+
+        {/* tax summary */}
+        <View style={{ borderTopWidth: 1, borderTopColor: BC }}>
+          <TaxRow k="Taxable Value" v={amt2(taxable)} />
+          {inter ? <TaxRow k={`IGST @ ${gstPct}%`} v={amt2(order.taxTotal)} />
+            : <><TaxRow k={`CGST @ ${gstPct / 2}%`} v={amt2(half)} /><TaxRow k={`SGST/UTGST @ ${gstPct / 2}%`} v={amt2(half)} /></>}
+          <TaxRow k="Net Amount (incl. taxes)" v={amt2(order.grandTotal)} bold />
+          <TaxRow k="Paid" v={amt2(order.paidNow)} />
+          {order.due > 0 && <TaxRow k="Balance Due" v={amt2(order.due)} bold danger />}
         </View>
-        {order.due > 0 && <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <T size={12.5} c={color.red} w="s">Balance due</T><Money value={order.due} size={12.5} c={color.red} /></View>}
+
+        {/* signatory */}
+        <View style={{ borderTopWidth: 1, borderTopColor: BC, padding: 8, alignItems: 'flex-end' }}>
+          <T size={11} w="b">For {settings.name}</T>
+          <T size={9.5} c={color.faint} style={{ marginTop: 26 }}>Authorised Signatory</T>
+        </View>
       </View>
     </View>
   );
 }
-function RowKV({ k, v }: { k: string; v: string }) {
-  return <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><T size={13} c={color.body}>{k}</T><T size={13} mono c={color.body}>{v}</T></View>;
+
+function MetaRow({ k, v, mono, first }: { k: string; v: string; mono?: boolean; first?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', borderTopWidth: first ? 0 : 1, borderTopColor: BC }}>
+      <Cell flex>{k}</Cell>
+      <View style={{ width: 150, padding: 6 }}><T size={10.5} w="s" mono={mono}>{v}</T></View>
+    </View>
+  );
+}
+function TaxRow({ k, v, bold, danger }: { k: string; v: string; bold?: boolean; danger?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BC }}>
+      <View style={{ flex: 1, padding: 6, borderRightWidth: 1, borderRightColor: BC }}>
+        <T size={11} w={bold ? 'b' : 'r'} c={danger ? color.red : color.body}>{k}</T></View>
+      <View style={{ width: 110, padding: 6 }}><T size={11} mono w={bold ? 'b' : 'm'} c={danger ? color.red : color.ink} style={{ textAlign: 'right' }}>{v}</T></View>
+    </View>
+  );
+}
+function Cell({ children, flex, w, bold, center, right, last, mono }: {
+  children: ReactNode; flex?: boolean; w?: number; bold?: boolean; center?: boolean; right?: boolean; last?: boolean; mono?: boolean;
+}) {
+  return (
+    <View style={{ flex: flex ? 1 : undefined, width: w, padding: 6, borderRightWidth: last ? 0 : 1, borderRightColor: BC }}>
+      <T size={10.5} w={bold ? 'b' : 'r'} mono={mono} style={{ textAlign: center ? 'center' : right ? 'right' : 'left' }}>{children}</T>
+    </View>
+  );
 }
