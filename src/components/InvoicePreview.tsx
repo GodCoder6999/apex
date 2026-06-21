@@ -7,6 +7,25 @@ import { rupeesInWords } from '../format';
 import type { Order } from '../data/types';
 import { getCustomers, getProducts, useSettings, customerName } from '../data/db';
 
+async function invoicePdfBlob(invoiceNo: string): Promise<Blob> {
+  // @ts-expect-error - html2pdf.js ships no types
+  const { default: html2pdf } = await import('html2pdf.js');
+  const el = document.getElementById('invoice-print');
+  return html2pdf().set({
+    margin: 6,
+    filename: `Invoice-${invoiceNo.replace(/\//g, '-')}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+  }).from(el).outputPdf('blob');
+}
+function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 const hsnOf = (productId: string) => getProducts().find((p) => p.id === productId)?.hsn ?? '—';
 
 const stateCode = (gstin?: string) => (gstin ? gstin.slice(0, 2) : '');
@@ -24,12 +43,27 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
   const date = new Date(order.createdAt);
   const dateStr = `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
 
-  const sendWa = () => {
-    const t = `${settings.name} — Tax Invoice ${order.invoiceNo}\nTotal ${amt(order.grandTotal)} · Paid ${amt(order.paidNow)} · Due ${amt(order.due)}`;
-    window.open(`https://wa.me/${(customer?.phone ?? '').replace(/\D/g, '')}?text=${encodeURIComponent(t)}`, '_blank');
+  const fileName = `Invoice-${order.invoiceNo.replace(/\//g, '-')}.pdf`;
+  // Share the actual PDF via the Web Share API (mobile + supported desktops);
+  // otherwise download it so the owner can attach it manually.
+  const sharePdf = async () => {
+    try {
+      const blob = await invoicePdfBlob(order.invoiceNo);
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file], title: `Invoice ${order.invoiceNo}`, text: `${settings.name} — Invoice ${order.invoiceNo}` });
+      } else {
+        downloadBlob(blob, fileName);
+        const t = `${settings.name} — Invoice ${order.invoiceNo}\nTotal ₹${amt(order.grandTotal)} · Due ₹${amt(order.due)}\n(PDF downloaded — attach it here)`;
+        window.open(`https://wa.me/${(customer?.phone ?? '').replace(/\D/g, '')}?text=${encodeURIComponent(t)}`, '_blank');
+      }
+    } catch { /* user cancelled */ }
   };
-  const sendMail = () => {
-    window.location.href = `mailto:?subject=${encodeURIComponent('Tax Invoice ' + order.invoiceNo)}&body=${encodeURIComponent(`Invoice ${order.invoiceNo}\nTotal ₹${amt(order.grandTotal)}\nDue ₹${amt(order.due)}`)}`;
+  const downloadPdf = async () => downloadBlob(await invoicePdfBlob(order.invoiceNo), fileName);
+  const sendMail = async () => {
+    downloadBlob(await invoicePdfBlob(order.invoiceNo), fileName);
+    window.location.href = `mailto:${customer?.gstin ? '' : ''}?subject=${encodeURIComponent('Invoice ' + order.invoiceNo + ' — ' + settings.name)}&body=${encodeURIComponent(`Please find attached Invoice ${order.invoiceNo}.\nTotal ₹${amt(order.grandTotal)} · Due ₹${amt(order.due)}\n\n(The PDF has been downloaded — attach it to this email.)`)}`;
   };
 
   const meta: [string, string][] = [
@@ -48,9 +82,9 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
         padding: '14px 20px', borderBottom: `1px solid ${color.hairline}`, position: 'sticky', top: 0, background: '#fff', zIndex: 2 }}>
         <div style={{ fontSize: 14, fontWeight: 650 }}>Tax Invoice {order.invoiceNo}</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <ActionBtn icon="wa" label="WhatsApp" onClick={sendWa} tint={color.accentDeep} />
+          <ActionBtn icon="wa" label="Share PDF" onClick={sharePdf} tint={color.accentDeep} />
           <ActionBtn icon="mail" label="Email" onClick={sendMail} />
-          <ActionBtn icon="download" label="PDF" onClick={() => window.print()} />
+          <ActionBtn icon="download" label="Download" onClick={downloadPdf} />
           <ActionBtn icon="print" label="Print" onClick={() => window.print()} />
           <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 8, border: 0, background: color.inputBg, color: color.muted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={15} strokeWidth={2} /></button>
         </div>
