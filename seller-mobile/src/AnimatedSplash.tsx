@@ -33,7 +33,7 @@ export function AnimatedSplash({ onDone }: { onDone: () => void }) {
       <Animated.Image source={require('../assets/logo.png')} resizeMode="contain"
         style={{ width: 168, height: 168, opacity: logoOp, transform: [{ scale: logoScale }] }} />
       <Animated.View style={{ opacity: textOp, marginTop: 6, alignItems: 'center' }}>
-        <T w="b" size={13} c={color.muted} style={{ letterSpacing: 3 }}>OWNER</T>
+        <T w="b" size={13} c={color.muted} style={{ letterSpacing: 3 }}>SELLER</T>
       </Animated.View>
       <View style={{ width: width * 0.42, height: 3, borderRadius: 3, backgroundColor: '#E2E8F0', overflow: 'hidden', marginTop: 26 }}>
         <Animated.View style={{ height: 3, borderRadius: 3, backgroundColor: color.accent, width: barW.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
