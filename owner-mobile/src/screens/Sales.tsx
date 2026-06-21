@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { color } from '../theme';
-import { T, Card, Badge, Btn, SearchBar, Chip, Sheet } from '../ui';
-import { TabScreen, Money, RowCard, InvoiceBody, shareInvoice } from '../components';
+import { T, Card, Badge, Btn, SearchBar, Chip, Sheet, useToast } from '../ui';
+import { TabScreen, Money, RowCard, InvoiceBody, shareInvoice, printInvoice } from '../components';
 import { shortDate } from '../format';
 import { useOrders, useSettings, customerName, sellerName } from '../data/db';
 import type { Order } from '../data/types';
@@ -12,6 +12,7 @@ type Filter = 'all' | 'paid' | 'partial' | 'due';
 
 export function Sales() {
   const nav = useNavigation<any>();
+  const toast = useToast();
   const orders = useOrders();
   const settings = useSettings();
   const [q, setQ] = useState('');
@@ -50,11 +51,12 @@ export function Sales() {
 
       <Sheet open={!!open} onClose={() => setOpen(null)} title="Invoice">
         {open && <>
-          <InvoiceBody order={open} />
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-            <Btn label="Share PDF" icon="wa" variant="accent" full onPress={() => shareInvoice(open, settings)} />
-            <Btn label="Close" variant="ghost" full onPress={() => setOpen(null)} />
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+            <Btn label="Download" icon="download" variant="ghost" full onPress={() => printInvoice(open, settings, (m) => toast(m, 'err'))} />
+            <Btn label="Share PDF" icon="wa" variant="accent" full onPress={() => shareInvoice(open, settings, (m) => toast(m, 'err'))} />
           </View>
+          <InvoiceBody order={open} />
+          <Btn label="Close" variant="ghost" full style={{ marginTop: 12 }} onPress={() => setOpen(null)} />
         </>}
       </Sheet>
     </TabScreen>

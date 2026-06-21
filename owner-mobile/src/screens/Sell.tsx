@@ -6,7 +6,7 @@ import { color, radius } from '../theme';
 import { font } from '../fonts';
 import { T, Card, Btn, Sheet, Field, Input, useToast } from '../ui';
 import { Icon } from '../icons';
-import { StackScreen, Money, InvoiceBody, shareInvoice } from '../components';
+import { StackScreen, Money, InvoiceBody, shareInvoice, printInvoice } from '../components';
 import { rupee } from '../format';
 import {
   useUnits, useProducts, useCustomers, useSettings, getProducts, createOrder, saveCustomer,
@@ -186,11 +186,12 @@ export function Sell() {
       {/* invoice result */}
       <Sheet open={!!generated} onClose={() => { setGenerated(null); nav.goBack(); }} title="Invoice">
         {generated && <>
-          <InvoiceBody order={generated} />
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-            <Btn label="Share PDF" icon="wa" variant="accent" full onPress={() => shareInvoice(generated, settings)} />
-            <Btn label="Done" variant="ghost" full onPress={() => { setGenerated(null); nav.goBack(); }} />
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+            <Btn label="Download" icon="download" variant="ghost" full onPress={() => printInvoice(generated, settings, (m) => toast(m, 'err'))} />
+            <Btn label="Share PDF" icon="wa" variant="accent" full onPress={() => shareInvoice(generated, settings, (m) => toast(m, 'err'))} />
           </View>
+          <InvoiceBody order={generated} />
+          <Btn label="Done" variant="ghost" full style={{ marginTop: 12 }} onPress={() => { setGenerated(null); nav.goBack(); }} />
         </>}
       </Sheet>
     </StackScreen>

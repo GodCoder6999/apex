@@ -117,18 +117,26 @@ export function RowCard({ children, onPress, style }: { children: ReactNode; onP
 
 // ---------- Invoice share: render the classic invoice to a PDF and share the
 // file (so WhatsApp / Gmail attach the real invoice, not plain text). ----------
-export async function shareInvoice(order: Order, settings: BusinessSettings) {
+export async function shareInvoice(order: Order, settings: BusinessSettings, onErr?: (m: string) => void) {
   try {
-    const html = invoiceHTML(order, settings);
-    const { uri } = await Print.printToFileAsync({ html, base64: false });
+    const { uri } = await Print.printToFileAsync({ html: invoiceHTML(order, settings), base64: false });
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Invoice ${order.invoiceNo}`, UTI: 'com.adobe.pdf' });
     } else {
       await Share.share({ url: uri, message: `Invoice ${order.invoiceNo}` });
     }
-  } catch {
-    // last-resort text share
+  } catch (e: any) {
+    onErr?.('PDF share failed: ' + (e?.message ?? 'unknown'));
     await Share.share({ message: `${settings.name} — Invoice ${order.invoiceNo} · Total ${rupee(order.grandTotal)}` }).catch(() => {});
+  }
+}
+
+/** Open the native print dialog (Android: lets the user "Save as PDF" = download). */
+export async function printInvoice(order: Order, settings: BusinessSettings, onErr?: (m: string) => void) {
+  try {
+    await Print.printAsync({ html: invoiceHTML(order, settings) });
+  } catch (e: any) {
+    onErr?.('Print failed: ' + (e?.message ?? 'unknown'));
   }
 }
 
