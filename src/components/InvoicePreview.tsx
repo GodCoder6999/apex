@@ -30,7 +30,7 @@ const hsnOf = (productId: string) => getProducts().find((p) => p.id === productI
 
 function TaxRow3({ k, rate, v }: { k: string; rate: string; v: string }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px 116px', fontSize: 11.5 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 150px', fontSize: 11.5 }}>
       <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B }}>{k}</div>
       <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B, textAlign: 'center' }}>{rate}</div>
       <div style={{ padding: '5px 8px', borderBottom: B, textAlign: 'right', fontFamily: "'Geist Mono', monospace" }}>{v}</div>
@@ -39,7 +39,7 @@ function TaxRow3({ k, rate, v }: { k: string; rate: string; v: string }) {
 }
 function TaxSpan({ k, v, bold, danger }: { k: string; v: string; bold?: boolean; danger?: boolean }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 116px', fontSize: 11.5 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px', fontSize: 11.5 }}>
       <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B, fontWeight: bold ? 700 : 400, color: danger ? '#E11D48' : '#334155' }}>{k}</div>
       <div style={{ padding: '5px 8px', borderBottom: B, textAlign: 'right', fontWeight: bold ? 700 : 500, fontFamily: "'Geist Mono', monospace", color: danger ? '#E11D48' : '#0F172A' }}>{v}</div>
     </div>
@@ -188,26 +188,23 @@ export function InvoicePreview({ order, onClose }: { order: Order | null; onClos
             <div style={{ fontWeight: 700 }}>{rupeesInWords(order.grandTotal)}</div>
           </div>
 
-          {/* tax summary: blank left + reference 3-col table on the right */}
-          <div style={{ borderTop: B, display: 'grid', gridTemplateColumns: '1fr 360px' }}>
-            <div style={{ borderRight: B }} />
-            <div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px 116px', background: '#EEF2FF', fontWeight: 700, fontSize: 11 }}>
-                <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B }}>Taxable Value</div>
-                <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B, textAlign: 'center' }}>Rate</div>
-                <div style={{ padding: '5px 8px', borderBottom: B, textAlign: 'right' }}>Amount</div>
-              </div>
-              {inter ? (
-                <TaxRow3 k="IGST" rate={`${gstPct}%`} v={amt(order.taxTotal)} />
-              ) : (
-                <><TaxRow3 k="CGST" rate={`${gstPct / 2}%`} v={amt(half)} />
-                  <TaxRow3 k="SGST/UTGST" rate={`${gstPct / 2}%`} v={amt(half)} /></>
-              )}
-              <TaxSpan k="Total Tax Amount" v={amt(order.taxTotal)} />
-              <TaxSpan k="Net Amount (Including all Taxes)" v={amt(order.grandTotal)} bold />
-              <TaxSpan k="Paid" v={amt(order.paidNow)} />
-              {order.due > 0 && <TaxSpan k="Balance Due" v={amt(order.due)} bold danger />}
+          {/* tax summary: full-width reference 3-col table */}
+          <div style={{ borderTop: B }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 150px', background: '#EEF2FF', fontWeight: 700, fontSize: 11 }}>
+              <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B }}>Taxable Value</div>
+              <div style={{ padding: '5px 8px', borderRight: B, borderBottom: B, textAlign: 'center' }}>Rate</div>
+              <div style={{ padding: '5px 8px', borderBottom: B, textAlign: 'right' }}>Amount</div>
             </div>
+            {inter ? (
+              <TaxRow3 k="IGST" rate={`${gstPct}%`} v={amt(order.taxTotal)} />
+            ) : (
+              <><TaxRow3 k="CGST" rate={`${gstPct / 2}%`} v={amt(half)} />
+                <TaxRow3 k="SGST/UTGST" rate={`${gstPct / 2}%`} v={amt(half)} /></>
+            )}
+            <TaxSpan k="Total Tax Amount" v={amt(order.taxTotal)} />
+            <TaxSpan k="Net Amount (Including all Taxes)" v={amt(order.grandTotal)} bold />
+            <TaxSpan k="Paid" v={amt(order.paidNow)} />
+            {order.due > 0 && <TaxSpan k="Balance Due" v={amt(order.due)} bold danger />}
           </div>
           <div style={{ borderTop: B, padding: 8, fontSize: 11.5 }}>
             <span style={{ color: '#475569' }}>Total Amount (in words): </span><span style={{ fontWeight: 700 }}>{rupeesInWords(order.grandTotal)}</span>
