@@ -9,11 +9,6 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "icon": "./assets/logo.png",
-    "splash": {
-      "image": "./assets/logo.png",
-      "backgroundColor": "#FFFFFF",
-      "resizeMode": "contain"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -40,6 +35,15 @@
         "expo-camera",
         {
           "cameraPermission": "S&D Solution uses the camera to scan product barcodes and serials."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
         }
       ]
     ],

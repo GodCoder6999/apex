@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Pressable, ActivityIndicator } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { AnimatedSplash } from './src/AnimatedSplash';
 import { NavigationContainer, type RouteProp } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -86,17 +88,23 @@ function Tabs() {
 
 export type SubRoute = RouteProp<RootParam, keyof RootParam>;
 
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
   const [fontsLoaded] = useFonts({
     Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold,
     GeistMono_400Regular, GeistMono_500Medium,
   });
   useEffect(() => { initStore().finally(() => setReady(true)); }, []);
 
-  if (!fontsLoaded || !ready) {
-    return <View style={{ flex: 1, backgroundColor: color.navBg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={color.accent} /></View>;
-  }
+  const loaded = fontsLoaded && ready;
+  // Hand off from the native splash to the animated one as soon as JS is up.
+  useEffect(() => { if (loaded) SplashScreen.hideAsync().catch(() => {}); }, [loaded]);
+
+  if (!loaded) return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
+
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
@@ -119,6 +127,7 @@ export default function App() {
           </Stack.Navigator>
         </NavigationContainer>
       </ToastProvider>
+      {!splashDone && <AnimatedSplash onDone={() => setSplashDone(true)} />}
     </SafeAreaProvider>
   );
 }
