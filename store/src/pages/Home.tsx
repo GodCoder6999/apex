@@ -20,7 +20,7 @@ export function Home() {
       <section style={{ position: 'relative', overflow: 'hidden', background: `linear-gradient(180deg, ${color.blueSoft2}, ${color.bg})` }}>
         <div aria-hidden style={{ position: 'absolute', top: -120, right: -80, width: 460, height: 460, borderRadius: '50%',
           background: `radial-gradient(circle at 30% 30%, ${color.blue2}, transparent 70%)`, opacity: 0.5, animation: 'sdMesh 14s ease-in-out infinite' }} />
-        <Container style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 30, alignItems: 'center', padding: '64px 20px 70px' }}>
+        <Container className="hero-grid" style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 30, alignItems: 'center', padding: '64px 20px 70px' }}>
           <div className="rise">
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', boxShadow: shadow.sm, borderRadius: 999, padding: '7px 14px', fontSize: 13, fontWeight: 600, color: color.blue }}>
               <Icon name="spark" size={15} stroke={color.blue} /> Genuine tech · delivered to your door

@@ -49,6 +49,9 @@ img { display: block; max-width: 100%; }
 @media (max-width: 900px) {
   .mob-only { display: inline-flex; }
   .desk-only { display: none !important; }
+  .pd-grid { grid-template-columns: 1fr !important; }
+  .hero-grid { grid-template-columns: 1fr !important; }
+  .no-mobtab { bottom: 64px !important; }
 }
 
 @media print { .no-print { display: none !important; } }

@@ -1,0 +1,11 @@
+# Render Static Site for the S&D Solution storefront.
+# Render → New + → Static Site → pick this repo, root directory: store
+services:
+  - type: web
+    name: snd-store
+    runtime: static
+    rootDir: store
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: true
+    # HashRouter — no SPA rewrite rule needed.

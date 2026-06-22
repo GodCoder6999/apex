@@ -2,8 +2,8 @@ import type { CSSProperties, ReactNode } from 'react';
 import { color, font, radius, shadow } from './theme';
 import { rupee, discountPct } from './format';
 
-export function Container({ children, style }: { children: ReactNode; style?: CSSProperties }) {
-  return <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 20px', ...style }}>{children}</div>;
+export function Container({ children, style, className }: { children: ReactNode; style?: CSSProperties; className?: string }) {
+  return <div className={className} style={{ maxWidth: 1240, margin: '0 auto', padding: '0 20px', ...style }}>{children}</div>;
 }
 
 type BtnVariant = 'blue' | 'dark' | 'outline' | 'ghost' | 'white';
