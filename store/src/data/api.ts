@@ -1,10 +1,42 @@
-// Thin API client for the shared Hostinger backend. Inert until VITE_API_BASE
-// is set. When live, a placed order is pushed as an ENQUIRY so it shows up in
-// the owner + seller apps' Enquiries section (per client requirement).
-import type { Order } from './types';
+// Thin API client for the shared backend. Inert until VITE_API_BASE is set.
+// When live: hydrates the shop catalog from the owner's real products/stock, and
+// pushes placed orders as ENQUIRIES (owner + seller see them).
+import type { Order, Product, Category } from './types';
+import { hydrate } from './catalog';
 
 export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 export const USE_API = API_BASE.length > 0;
+
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/** Load the live catalog before the app renders (no-op on mock). */
+export async function hydrateFromApi(): Promise<void> {
+  if (!USE_API) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/bootstrap`);
+    if (!r.ok) return;
+    const b = await r.json();
+    const stock = new Map<string, number>();
+    for (const u of (b.units || [])) if (u.status === 'in_storage') stock.set(u.productId, (stock.get(u.productId) || 0) + 1);
+
+    const cats: Category[] = (b.categories || []).map((c: any) => ({ id: c.id, name: c.name, slug: c.slug || slugify(c.name), icon: c.icon || 'chip' }));
+    const products: Product[] = (b.products || []).filter((p: any) => p.active !== false).map((p: any): Product => {
+      const images = Array.isArray(p.images) && p.images.length ? p.images : (p.image ? [p.image] : []);
+      const specs = Array.isArray(p.specs) ? p.specs
+        : (typeof p.specs === 'string' && p.specs ? p.specs.split('·').map((x: string) => ({ k: 'Spec', v: x.trim() })) : []);
+      const highlights = Array.isArray(p.highlights) && p.highlights.length ? p.highlights
+        : (typeof p.specs === 'string' ? p.specs.split('·').map((x: string) => x.trim()).filter(Boolean) : []);
+      return {
+        id: p.id, slug: p.slug || slugify(p.name), name: p.name, brand: p.brand || '', categoryId: p.categoryId,
+        price: Number(p.price) || 0, mrp: p.mrp ? Number(p.mrp) : undefined, gstRate: Number(p.gstRate) || 18,
+        rating: Number(p.rating) || 4.6, reviews: Number(p.reviews) || 0, stock: stock.get(p.id) || 0,
+        images, highlights, specs, warranty: p.warranty, featured: p.featured, bestSeller: p.bestSeller,
+        newArrival: p.newArrival, deal: p.mrp && p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : undefined,
+      };
+    });
+    hydrate(products, cats);
+  } catch (e) { console.warn('[api] catalog hydrate failed', e); }
+}
 
 /** Push a customer order to the shop as an enquiry (owner/seller see it). */
 export async function pushOrderAsEnquiry(order: Order): Promise<void> {
@@ -19,10 +51,4 @@ export async function pushOrderAsEnquiry(order: Order): Promise<void> {
       body: JSON.stringify({ name: a.name, phone: a.phone, items, note, status: 'open' }),
     });
   } catch (e) { console.warn('[api] order→enquiry failed', e); }
-}
-
-/** (Later) read the live catalog so the shop shows the owner's real stock. */
-export async function fetchCatalog(): Promise<any[] | null> {
-  if (!USE_API) return null;
-  try { const r = await fetch(`${API_BASE}/api/products`); return r.ok ? r.json() : null; } catch { return null; }
 }

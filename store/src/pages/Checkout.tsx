@@ -5,7 +5,7 @@ import { Icon } from '../icons';
 import { Container, Btn } from '../ui';
 import { rupee } from '../format';
 import { useStore } from '../store';
-import { products } from '../data/seed';
+import { productById } from '../data/catalog';
 import type { Address } from '../data/types';
 
 const STATES = ['West Bengal', 'Maharashtra', 'Delhi', 'Karnataka', 'Tamil Nadu', 'Uttar Pradesh', 'Gujarat', 'Telangana', 'Rajasthan', 'Other'];
@@ -17,7 +17,7 @@ export function Checkout() {
   const [f, setF] = useState<Address>({ name: '', phone: '', email: '', line: '', city: '', state: 'West Bengal', pincode: '', gstin: '' });
   const set = (k: keyof Address, v: string) => setF((s) => ({ ...s, [k]: v }));
 
-  const lines = items.map((it) => ({ it, p: products.find((x) => x.id === it.productId)! })).filter((l) => l.p);
+  const lines = items.map((it) => ({ it, p: productById(it.productId)! })).filter((l) => l.p);
   if (lines.length === 0) return (
     <Container style={{ padding: '70px 20px', textAlign: 'center' }}>
       <div style={{ width: 64, height: 64, borderRadius: 999, background: color.surface, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="cart" size={28} stroke={color.muted} /></div>

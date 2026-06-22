@@ -3,12 +3,12 @@
 // shop API later — it lands in the owner/seller apps).
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Address, CartItem, Order } from './data/types';
-import { products } from './data/seed';
+import { productById } from './data/catalog';
 import { pushOrderAsEnquiry } from './data/api';
 
 const CART_KEY = 'snd-store-cart';
 const ORDERS_KEY = 'snd-store-orders';
-const lookup = (id: string) => products.find((p) => p.id === id);
+const lookup = (id: string) => productById(id);
 
 interface Ctx {
   items: CartItem[];

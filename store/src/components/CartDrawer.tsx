@@ -4,12 +4,12 @@ import { rupee } from '../format';
 import { Icon } from '../icons';
 import { Btn } from '../ui';
 import { useStore } from '../store';
-import { products } from '../data/seed';
+import { productById } from '../data/catalog';
 
 export function CartDrawer() {
   const { drawerOpen, closeDrawer, items, setQty, remove, total, count } = useStore();
   if (!drawerOpen) return null;
-  const lines = items.map((it) => ({ it, p: products.find((x) => x.id === it.productId)! })).filter((l) => l.p);
+  const lines = items.map((it) => ({ it, p: productById(it.productId)! })).filter((l) => l.p);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300 }}>

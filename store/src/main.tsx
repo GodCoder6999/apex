@@ -4,13 +4,17 @@ import { HashRouter } from 'react-router-dom';
 import './styles.css';
 import { StoreProvider } from './store';
 import { App } from './App';
+import { hydrateFromApi } from './data/api';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <HashRouter>
-      <StoreProvider>
-        <App />
-      </StoreProvider>
-    </HashRouter>
-  </StrictMode>,
-);
+// Load the live shared catalog (if VITE_API_BASE is set) before first render.
+hydrateFromApi().finally(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <HashRouter>
+        <StoreProvider>
+          <App />
+        </StoreProvider>
+      </HashRouter>
+    </StrictMode>,
+  );
+});
