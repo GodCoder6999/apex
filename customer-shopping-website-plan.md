@@ -35,6 +35,31 @@ Three apps already exist and share one backend:
 
 ---
 
+## 1.5 Confirmed decisions (LOCKED by client)
+1. **Order-placement shop, NOT online payment.** Customers browse + place an
+   order. **No payment gateway.** The order is **transferred to the owner/seller**
+   apps for fulfilment.
+2. **Payment** is taken by the **seller at delivery** (cash / online / split) via
+   the existing Sell/Collect flow → GST invoice generated then. Online order is
+   created with the amount as **due until the seller collects** it.
+3. **Delivery is done by sellers.** No courier integration. Owner assigns the
+   order to a seller; seller delivers and collects payment.
+4. **Account optional.** Customers can checkout as **guest**, but **must provide
+   full details** (name, phone, full delivery address; GSTIN optional for B2B)
+   to place an order.
+5. **Only in-stock products** (owner-added, `in_storage` count > 0) are shown.
+   **Never expose internal product IDs** — use SEO-style slugs in URLs.
+6. **No payment/checkout-payment step.** Checkout = contact → delivery address →
+   review → **Place order**.
+7. **No custom domain yet** — deploy on **Render** (static site), same as the
+   owner website. Backend = the Hostinger PHP+MySQL API.
+8. **SEO: not a priority now** → ship as a **SPA** (React+Vite) with basic meta
+   tags; revisit SSR/prerender only if/when a real domain + Google traffic matter.
+
+> Net effect: this is a **catalog + order-request** site, much simpler than full
+> e-commerce. It mirrors the in-store flow — order in, seller delivers, seller
+> collects, dues/profit reconcile in the apps you already have.
+
 ## 2. Tech stack (fits what's already built)
 - **React + Vite + TypeScript** (same as owner website) — fast, static-friendly.
 - **react-router-dom** for routing. SEO note below (consider SSR/prerender).
@@ -164,19 +189,19 @@ On order **confirmation**, the owner/system **reserves/assigns serial units**
 - Stock re-validation. **Checkout** CTA. Empty-cart state with CTAs.
 - Cart persists (localStorage for guests; synced to account on login).
 
-### 5.7 Checkout (`/checkout`)
-Stepper or single page:
-1. **Contact** — email/phone (login or guest; option to create account).
-2. **Delivery method** — *Home delivery* and/or *Store pickup* (decision §19).
-3. **Address** — saved addresses or new (name, phone, address, city, state,
-   pincode); **GSTIN** field for B2B invoice.
-4. **Payment** — online (Razorpay: UPI/card/netbanking/wallet) and/or **COD**
-   and/or **Pay at store** (decision §19).
-5. **Review & place order** — items, totals, GST (CGST/SGST vs IGST by state),
-   address, terms checkbox.
-- On success → create order (`channel=online`, `status=placed`), reduce
-  availability, fire confirmation (email/WhatsApp), show success page.
-- Robust error handling for payment failure / stock-changed.
+### 5.7 Checkout (`/checkout`) — NO online payment
+Single page / short stepper (guest allowed; login optional):
+1. **Contact** (required) — name, **phone**, email (optional). Option to create
+   an account to save details.
+2. **Delivery address** (required) — full address, city, **state**, pincode;
+   **GSTIN** optional (B2B invoice). Saved addresses if logged in.
+3. **Review & place order** — items, qty, totals, **GST** (CGST/SGST vs IGST by
+   state), delivery note, terms checkbox. **"Place order"** (no payment).
+- Payment line shows **"Pay on delivery (collected by our team)"**.
+- On submit → create order (`channel=online`, `status=placed`, `paidNow=0`,
+  `due=grandTotal`), decrement availability, send confirmation
+  (WhatsApp/email link), show success page with order no.
+- Validate stock + totals **server-side**. Handle stock-changed gracefully.
 
 ### 5.8 Order success + tracking
 - **Success page:** order no., summary, ETA, what's next, download/印 invoice
@@ -231,17 +256,17 @@ Stepper or single page:
   customer can download PDF from order detail once confirmed.
 - **Coupons/discounts** (optional): code-based, validated server-side.
 
-## 8. Delivery / shipping (decision-dependent)
-- Options: **Home delivery** (flat fee / free over ₹X / weight-zone), **Store
-  pickup** (free), **courier integration** (optional: Shiprocket/Delhivery) or
-  manual dispatch + tracking link.
-- Serviceable-pincode check (optional).
+## 8. Delivery (by sellers)
+- **Sellers deliver** the order. No courier/shipping integration.
+- Owner (or auto-rule) **assigns** the online order to a seller; the seller sees
+  it in the seller app and delivers.
+- Optional delivery note/fee field; serviceable-area note (manual).
 
-## 9. Payments (decision-dependent)
-- **Razorpay** (recommended): UPI, cards, netbanking, wallets, EMI.
-- **COD** (optional, risk for high-value electronics — maybe cap by amount).
-- **Pay at store / pay on pickup** (optional).
-- Refunds via gateway for cancellations/returns.
+## 9. Payments — none online
+- **No payment gateway.** Order is created with the total as **due**.
+- The **seller collects payment at delivery** (cash / online / split) using the
+  existing Sell/Collect flow → **GST invoice** generated, dues/profit reconcile
+  in the owner/seller apps. Customer sees "Pay on delivery".
 
 ## 10. Notifications
 - **Email** (order confirmation, status, invoice) — SMTP/Resend/Brevo.
@@ -295,10 +320,11 @@ Owner needs to manage (additions to the owner app or a small admin section):
    availability from stock.
 3. **Cart & accounts** — cart (guest + synced), register/login, addresses,
    wishlist (optional).
-4. **Checkout & payments** — address → delivery → **Razorpay** → place order →
-   success; order creation into backend.
-5. **Orders & fulfilment** — account orders + tracking, owner-app online-orders
-   view + confirm/assign serials + GST invoice + status updates + notifications.
+4. **Checkout (no payment)** — contact + delivery address (required) → review →
+   **Place order**; order created in backend as due.
+5. **Orders & fulfilment** — account/guest order tracking, owner-app
+   **online-orders** view + **assign to seller** + confirm/assign serials + GST
+   invoice (seller collects at delivery) + status updates + WhatsApp/email note.
 6. **Content & admin** — banners/featured/online-price management, coupons,
    policies, reviews.
 7. **SEO & launch** — meta/schema/sitemap, analytics, performance, Hostinger
@@ -314,26 +340,26 @@ Owner needs to manage (additions to the owner app or a small admin section):
 
 ---
 
-## 19. Decisions to confirm with the client (please answer before build)
-1. **Buy online vs enquiry-only?** Full e-commerce checkout + payment, OR
-   browse + "enquire/quote" (no online payment) to start? (Big-ticket
-   electronics often start enquiry-first.)
-2. **Payment gateway:** Razorpay? And which methods — UPI/cards/netbanking/EMI?
-   **COD** allowed? amount cap? **Pay at store** option?
-3. **Delivery:** home delivery (fees? free-over-₹X?) and/or **store pickup
-   only**? Courier integration (Shiprocket/Delhivery) or manual dispatch?
-4. **Accounts:** required to buy, or **guest checkout** allowed? Social login?
-5. **Catalog scope online:** all products or a curated subset? Separate
-   **online price** vs in-store price?
-6. **Reviews & ratings:** include now or later? Owner-moderated?
-7. **Coupons/offers:** needed at launch?
-8. **SEO priority:** if high → invest in SSR/prerender (maybe Next.js) vs SPA.
-9. **Domain & email:** shop domain (e.g. shop.sndsolution.in) + transactional
-   email provider.
-10. **Returns/warranty policy** content (needed for policy pages + flows).
-11. **Languages/currency:** English + ₹ only (assumed)?
-12. **Owner workflow:** OK to add an "Online orders" + storefront-management
-    section to the owner app?
+## 19. Decisions — RESOLVED
+1. **Buy online vs enquiry:** ✅ Place orders online (browse + order). **No
+   online payment** — order transferred to owner/seller.
+2. **Payment gateway:** ❌ none. Seller collects at delivery (existing flow).
+3. **Delivery:** ✅ by **sellers** (no courier).
+4. **Accounts:** optional; **full details required** to place an order (guest OK).
+5. **Catalog scope:** ✅ only **in-stock** products the owner added. **No
+   product IDs exposed** (slugs only). Single price (online = in-store) unless an
+   `onlinePrice` is later set.
+6. **SEO:** ✅ not a priority now → **SPA**, basic meta tags.
+7. **Domain:** ❌ none yet → deploy on **Render**.
+
+### Still nice to confirm (non-blocking — sensible defaults assumed)
+- **Reviews/ratings, coupons, wishlist** → assume **later** (skip at launch).
+- **Returns/warranty/policy** page text → owner to supply; placeholder for now.
+- **Currency/language** → ₹ + English.
+- **Owner-app additions** (Online-orders view + confirm/assign-to-seller +
+  storefront content like banners/featured/online-visibility) → assumed **yes**,
+  built in Phase 5–6.
+- **Notifications** → WhatsApp/email link on order (no API) for now.
 
 ---
 
