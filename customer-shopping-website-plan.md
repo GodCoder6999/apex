@@ -363,12 +363,39 @@ Owner needs to manage (additions to the owner app or a small admin section):
 
 ---
 
-## 20. Design hand-off notes (for the design you'll provide)
-- Reuse **S&D Solution** brand: emerald accent, Geist type, the logo, clean
-  "tech-retail" feel — consistent with the dashboard + apps.
-- Provide: **Home, Category listing, Product detail, Cart, Checkout, Account/
-  Orders, Search, Auth, Enquiry, static/policy** screens — desktop + mobile.
-- Components to design: header/search/cart, product card, filter rail, gallery,
-  price/stock block, qty stepper, cart summary, checkout stepper, address form,
-  payment block, order timeline, empty/loading/error states, footer.
+## 20. Visual identity & experience (DISTINCT from the apps)
+The storefront must **NOT** look like the owner/seller dashboard. It is a
+**consumer shopping experience** — attractive, attention-grabbing, and
+**compelling to buy**. The exact palette/typography/theme is **chosen by Claude
+Design** (the accent follows whatever theme it picks). Only the **logo** carries
+over; the emerald/Geist dashboard system does **not**.
+
+**Experience principles the design must deliver (theme-agnostic):**
+- **Bold, premium first impression** — large cinematic hero, strong product
+  imagery, confident typography, a clear distinct accent.
+- **Conversion-focused** — prominent **Add to cart / Buy now**, sticky add-to-cart
+  on product + mobile, clear price + savings, low-friction guest checkout.
+- **Urgency & trust cues** — "Only N left", "In stock", genuine/GST-invoice/
+  warranty badges, delivery-by-our-team note, ratings/social proof (later).
+- **Motion & delight** — tasteful hover/scroll animations, image zoom, smooth
+  transitions, skeleton loaders (never janky).
+- **Merchandising** — hero banners, featured/best-seller/new carousels, shop-by-
+  category and shop-by-brand, deal highlights.
+- **Mobile-first & fast** — most shoppers are on phones; thumb-friendly, bottom
+  nav, large tap targets, quick loads.
+- **Polished states** — beautiful empty/loading/error, friendly microcopy.
+
+**Screens to design (desktop + mobile):** Home, Category listing (with filters/
+sort), Search + autocomplete, Product detail, Cart, Checkout (no payment),
+Order success + tracking, Account/Orders, Login/Register, Enquiry/quote, static/
+policy pages.
+
+**Components:** header (logo + search + cart + account), product card, filter
+rail/drawer, image gallery, price/stock block, qty stepper, cart line + summary,
+checkout stepper, address form, order timeline, badges/ribbons, footer,
+empty/loading/error states.
+
+> Hand-off: a separate Claude Design brief — `customer-shop-design.md` — captures
+> this for the designer. The design tool decides the theme; this plan governs the
+> features, data, and flows.
 ```
