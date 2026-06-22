@@ -8,7 +8,7 @@ export interface Category { id: string; name: string; active: boolean; }
 export interface Product {
   id: string; name: string; categoryId: string; barcode?: string;
   price: number; costPrice: number; gstRate: number; hsn?: string;
-  brand?: string; specs?: string; image?: string; active: boolean;
+  brand?: string; specs?: string; image?: string; images?: string[]; active: boolean;
 }
 
 export interface Unit {

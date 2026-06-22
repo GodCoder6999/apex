@@ -4,6 +4,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Address, CartItem, Order } from './data/types';
 import { products } from './data/seed';
+import { pushOrderAsEnquiry } from './data/api';
 
 const CART_KEY = 'snd-store-cart';
 const ORDERS_KEY = 'snd-store-orders';
@@ -88,6 +89,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const prev = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]') as Order[];
     localStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...prev]));
     setItems([]);
+    // Push to the shop as an enquiry (owner + seller Enquiries) when API is live.
+    void pushOrderAsEnquiry(order);
     return order;
   }, [items, subTotal, gst, total]);
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Pressable, ScrollView } from 'react-native';
+import { View, Pressable, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { color, radius } from '../theme';
@@ -99,29 +99,37 @@ function ProductSheet({ target, onClose }: { target: Product | 'new' | null; onC
   // Show the form for a brand-new product OR when editing an existing one.
   const showForm = isNew || edit;
   const set = (k: keyof Product, v: any) => setF((s) => ({ ...s, [k]: v }));
+  const images = f.images ?? (f.image ? [f.image] : []);
+  const setImages = (imgs: string[]) => setF((s) => ({ ...s, images: imgs, image: imgs[0] }));
   const pickImage = async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5, base64: true });
-    if (!res.canceled && res.assets[0]?.base64) set('image', `data:image/jpeg;base64,${res.assets[0].base64}`);
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5, base64: true, allowsMultipleSelection: true, selectionLimit: 6 });
+    if (res.canceled) return;
+    const added = res.assets.filter((a) => a.base64).map((a) => `data:image/jpeg;base64,${a.base64}`);
+    setImages([...images, ...added].slice(0, 6));
   };
+  const removeImg = (i: number) => setImages(images.filter((_, idx) => idx !== i));
   const submit = () => {
     if (!f.name || !f.categoryId) { toast('Name and category required', 'err'); return; }
     saveProduct({ id: product?.id, name: f.name!, categoryId: f.categoryId!, brand: f.brand, specs: f.specs,
-      price: f.price ?? 0, costPrice: f.costPrice ?? 0, gstRate: f.gstRate ?? 18, hsn: f.hsn, barcode: f.barcode, image: f.image, active: true });
+      price: f.price ?? 0, costPrice: f.costPrice ?? 0, gstRate: f.gstRate ?? 18, hsn: f.hsn,
+      image: images[0], images, active: true });
     toast(product ? 'Product updated' : 'Product added'); onClose();
   };
 
   if (showForm) {
     return (
       <Sheet open onClose={onClose} title={product ? 'Edit product' : 'New product'}>
-        <Field label="Photo (optional)">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Thumb name={f.name ?? 'New'} image={f.image} size={56} />
-            <Btn label={f.image ? 'Replace' : 'Upload'} icon="image" variant="ghost" small onPress={pickImage} />
-            {f.image && <T size={12.5} w="s" c={color.red} onPress={() => set('image', undefined)}>Remove</T>}
+        <Field label="Photos (first is the icon)">
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            {images.map((im, i) => (
+              <View key={i} style={{ position: 'relative' }}>
+                <Image source={{ uri: im }} style={{ width: 56, height: 56, borderRadius: 12 }} />
+                {i === 0 && <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.55)', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}><T size={8} c="#fff" center>ICON</T></View>}
+                <Pressable onPress={() => removeImg(i)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: color.red, alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={12} color="#fff" stroke={2.4} /></Pressable>
+              </View>
+            ))}
+            {images.length < 6 && <Btn label="Add" icon="image" variant="ghost" small onPress={pickImage} />}
           </View>
-        </Field>
-        <Field label="Barcode">
-          <Input value={f.barcode ?? ''} mono onChangeText={(v) => set('barcode', v)} placeholder="Scan or type" />
         </Field>
         <Field label="Name"><Input value={f.name ?? ''} onChangeText={(v) => set('name', v)} placeholder="Product name" /></Field>
         <Field label="Category">

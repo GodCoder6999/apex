@@ -22,7 +22,8 @@ export interface Product {
   hsn?: string;
   brand?: string;
   specs?: string;
-  image?: string; // optional data-URL thumbnail
+  image?: string;     // icon = first image
+  images?: string[];  // gallery (multiple), shown on the customer site
   active: boolean;
 }
 

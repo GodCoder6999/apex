@@ -7,7 +7,7 @@ import { T, Card, Btn, Sheet, useToast, Input } from '../ui';
 import { Icon } from '../icons';
 import { StackScreen, Money } from '../components';
 import { rupee } from '../format';
-import { useProducts, addUnits } from '../data/db';
+import { useProducts, addUnits, getUnits } from '../data/db';
 
 export function Intake() {
   const nav = useNavigation<any>();
@@ -23,7 +23,8 @@ export function Intake() {
 
   const add = (serial: string) => {
     const s = serial.trim(); if (!s) return;
-    if (rows.some((r) => r.serial === s)) { toast('Already in batch', 'err'); return; }
+    if (rows.some((r) => r.serial.toLowerCase() === s.toLowerCase())) { toast('Already in this batch', 'err'); return; }
+    if (getUnits().some((u) => u.serial.toLowerCase() === s.toLowerCase())) { toast('Serial already in inventory', 'err'); return; }
     setRows((r) => [{ serial: s, cost: product?.costPrice ?? 0 }, ...r]); setScan('');
   };
 

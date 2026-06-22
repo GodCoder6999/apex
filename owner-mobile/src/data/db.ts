@@ -86,6 +86,7 @@ export const getCategories = () => state.categories;
 export const unitsByProduct = (id: string) => state.units.filter((u) => u.productId === id);
 export const inStockCount = (id: string) => state.units.filter((u) => u.productId === id && u.status === 'in_storage').length;
 export const categoryName = (id: string) => state.categories.find((c) => c.id === id)?.name ?? '—';
+export const productName = (id: string) => state.products.find((p) => p.id === id)?.name ?? '—';
 export const customerName = (id: string) => state.customers.find((c) => c.id === id)?.name ?? 'Walk-in';
 export const sellerName = (id: string) => id === 'owner' ? 'Owner' : (state.sellers.find((s) => s.id === id)?.name ?? '—');
 export const customerDue = (id: string) => state.orders.filter((o) => o.customerId === id).reduce((s, o) => s + o.due, 0);
@@ -108,7 +109,9 @@ export function deleteProduct(id: string) {
   emit(); sync(() => api.deleteProduct(id));
 }
 export function addUnits(productId: string, serials: { serial: string; cost: number }[]) {
-  const added: Unit[] = serials.map((s) => ({ id: uid('u'), productId, serial: s.serial, costPrice: s.cost, status: 'in_storage', addedAt: Date.now() }));
+  const existing = new Set(state.units.map((u) => u.serial.toLowerCase()));
+  const fresh = serials.filter((s) => !existing.has(s.serial.toLowerCase()));
+  const added: Unit[] = fresh.map((s) => ({ id: uid('u'), productId, serial: s.serial, costPrice: s.cost, status: 'in_storage', addedAt: Date.now() }));
   state = { ...state, units: [...added, ...state.units] }; emit(); added.forEach((u) => sync(() => api.addUnit(u)));
   return added.length;
 }

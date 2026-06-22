@@ -164,10 +164,11 @@ function ProductForm({ open, product, onClose }: { open: boolean; product: Produ
 
   const submit = () => {
     if (!f.name || !f.categoryId) { toast('Name and category required', 'err'); return; }
+    const imgs = f.images ?? (f.image ? [f.image] : []);
     saveProduct({
       id: product?.id, name: f.name!, categoryId: f.categoryId!, brand: f.brand, specs: f.specs,
       price: f.price ?? 0, costPrice: f.costPrice ?? 0, gstRate: f.gstRate ?? 18, hsn: f.hsn,
-      barcode: f.barcode, image: f.image, active: f.active ?? true,
+      image: imgs[0], images: imgs, active: f.active ?? true,
     });
     toast(product ? 'Product updated' : 'Product added');
     onClose();
@@ -177,13 +178,6 @@ function ProductForm({ open, product, onClose }: { open: boolean; product: Produ
     <Modal open onClose={onClose} width={560}>
       <ModalHeader title={product ? 'Edit product' : 'New product'} onClose={onClose} />
       <div style={{ padding: 20 }}>
-        <Field label="Barcode">
-          <div className="focusRing" style={{ display: 'flex', alignItems: 'center', gap: 9, ...inputStyle, padding: '0 12px' }}>
-            <Icon name="scan" size={17} stroke={color.accent} />
-            <input value={f.barcode ?? ''} onChange={txt('barcode')} placeholder="Scan or type product barcode"
-              style={{ border: 0, background: 'transparent', flex: 1, fontFamily: mono, fontSize: 14 }} />
-          </div>
-        </Field>
         <Field label="Product name"><TextInput value={f.name ?? ''} onChange={txt('name')} placeholder="e.g. ThinkPad X1 Carbon" /></Field>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <Field label="Category">
@@ -200,22 +194,24 @@ function ProductForm({ open, product, onClose }: { open: boolean; product: Produ
           <Field label="GST %"><TextInput type="number" value={f.gstRate ?? ''} onChange={num('gstRate')} /></Field>
         </div>
         <Field label="HSN code"><TextInput value={f.hsn ?? ''} onChange={txt('hsn')} placeholder="8471" /></Field>
-        <Field label="Photo (optional)">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 56, height: 56, borderRadius: radius.lg, border: `1px solid ${color.borderStrong}`,
-              background: f.image ? `center/cover no-repeat url(${f.image})` : color.inputBg, color: color.faint,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-              {!f.image && <Icon name="image" size={20} stroke={color.faint} />}
-            </div>
-            <label style={{ ...inputStyle, height: 38, width: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7,
-              padding: '0 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: color.body }}>
-              <Icon name="download" size={15} />{f.image ? 'Replace' : 'Upload image'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                const file = e.target.files?.[0]; if (!file) return;
-                const r = new FileReader(); r.onload = () => set('image', String(r.result)); r.readAsDataURL(file);
+        <Field label="Photos (first is the icon · multiple shown on the shop)">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            {(f.images ?? (f.image ? [f.image] : [])).map((im, i) => (
+              <div key={i} style={{ position: 'relative', width: 64, height: 64 }}>
+                <div style={{ width: 64, height: 64, borderRadius: radius.lg, border: `1px solid ${color.borderStrong}`, background: `center/cover no-repeat url(${im})` }} />
+                {i === 0 && <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(15,23,42,0.6)', color: '#fff', fontSize: 8.5, textAlign: 'center', borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg, letterSpacing: '0.06em' }}>ICON</span>}
+                <button onClick={() => { const arr = (f.images ?? (f.image ? [f.image] : [])).filter((_, idx) => idx !== i); set('images', arr); set('image', arr[0]); }}
+                  style={{ position: 'absolute', top: -7, right: -7, width: 20, height: 20, borderRadius: 999, background: color.red, color: '#fff', border: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={12} strokeWidth={2.4} /></button>
+              </div>
+            ))}
+            <label style={{ width: 64, height: 64, borderRadius: radius.lg, border: `1.5px dashed ${color.borderStrong}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: color.faint, fontSize: 10.5, fontWeight: 600, gap: 2 }}>
+              <Icon name="plus" size={18} stroke={color.faint} />Add
+              <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => {
+                const files = Array.from(e.target.files ?? []); if (!files.length) return;
+                Promise.all(files.map((file) => new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(file); })))
+                  .then((urls) => { const arr = [...(f.images ?? (f.image ? [f.image] : [])), ...urls].slice(0, 6); set('images', arr); set('image', arr[0]); });
               }} />
             </label>
-            {f.image && <button onClick={() => set('image', undefined)} style={{ background: 'transparent', border: 0, color: color.red, fontSize: 12.5, fontWeight: 600 }}>Remove</button>}
           </div>
         </Field>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>

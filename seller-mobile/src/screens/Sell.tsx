@@ -49,8 +49,9 @@ export function Sell() {
   const matches = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return [] as typeof available;
-    return available.filter((u) => u.serial.toLowerCase().includes(t) || products.find((p) => p.id === u.productId)?.name.toLowerCase().includes(t)).slice(0, 6);
+    return available.filter((u) => u.serial.toLowerCase().includes(t) || products.find((p) => p.id === u.productId)?.name.toLowerCase().includes(t)).slice(0, 30);
   }, [q, available, products]);
+  const pickList = q.trim() ? matches : available.slice(0, 40);
 
   const addUnit = (productId: string, serial: string) => { setLines((l) => [...l, lineFrom(productId, serial, 0)]); setQ(''); };
 
@@ -96,20 +97,25 @@ export function Sell() {
           <Pressable onPress={() => nav.navigate('Scan', { mode: 'sell' })} style={{ width: 48, height: 48, borderRadius: radius.lg, backgroundColor: color.accentDeep, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="scan" size={22} color="#fff" /></Pressable>
         </View>
-        {matches.length > 0 && (
-          <Card pad={0} style={{ marginBottom: 10 }}>
-            {matches.map((u, i) => {
+        {/* pick from your stock — no scan needed */}
+        <T w="s" size={12} c={color.muted} style={{ marginTop: 4, marginBottom: 6 }}>
+          {q.trim() ? `${pickList.length} match${pickList.length === 1 ? '' : 'es'}` : `Your stock · tap to add (${available.length})`}
+        </T>
+        <Card pad={0} style={{ marginBottom: 10, maxHeight: 280 }}>
+          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            {pickList.map((u, i) => {
               const p = products.find((x) => x.id === u.productId)!;
               return (
                 <Pressable key={u.id} onPress={() => addUnit(u.productId, u.serial)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: i ? 1 : 0, borderTopColor: color.hairline }}>
-                  <Icon name="scan" size={16} color={color.faint} />
+                  <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color.accentSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="plus" size={16} color={color.accentDeep} /></View>
                   <View style={{ flex: 1 }}><T w="s" size={13}>{p.name}</T><T size={11} c={color.faint} mono>{u.serial}</T></View>
                   <Money value={p.price} size={13} />
                 </Pressable>
               );
             })}
-          </Card>
-        )}
+            {pickList.length === 0 && <View style={{ padding: 16 }}><T size={12.5} c={color.faint} center>{available.length === 0 ? 'No stock with you — collect stock first.' : 'No match.'}</T></View>}
+          </ScrollView>
+        </Card>
 
         {/* lines */}
         <View style={{ gap: 8, marginTop: 6 }}>

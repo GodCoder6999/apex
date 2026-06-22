@@ -4,7 +4,7 @@ import { color, radius } from '../theme';
 import { T, Card, Badge, Btn, SearchBar, Sheet, Field, Input, useToast } from '../ui';
 import { StackScreen, Money, RowCard } from '../components';
 import { rupee, initials } from '../format';
-import { useSellers, useOrders, usePayments, useUnits, saveSeller } from '../data/db';
+import { useSellers, useOrders, usePayments, useUnits, saveSeller, productName } from '../data/db';
 import type { Seller } from '../data/types';
 
 function useMetrics() {
@@ -70,7 +70,11 @@ export function Sellers() {
         <View style={{ borderWidth: 1, borderColor: color.border, borderRadius: radius.lg, overflow: 'hidden' }}>
           {metrics(detail.id).stock.map((u, i) => (
             <View key={u.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 11, borderTopWidth: i ? 1 : 0, borderTopColor: color.hairline }}>
-              <T mono size={12.5}>{u.serial}</T><Badge kind="with_seller" />
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <T w="s" size={13}>{productName(u.productId)}</T>
+                <T mono size={11.5} c={color.faint}>{u.serial}</T>
+              </View>
+              <Badge kind="with_seller" />
             </View>
           ))}
           {metrics(detail.id).stock.length === 0 && <View style={{ padding: 12 }}><T size={12.5} c={color.faint}>No stock held.</T></View>}
