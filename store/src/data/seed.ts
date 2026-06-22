@@ -1,0 +1,78 @@
+// In-stock catalog for the storefront. (Owner-curated in production; demo data
+// here.) Images use picsum seeds for consistent demo visuals.
+import type { Brand, Category, Product } from './types';
+
+export const categories: Category[] = [
+  { id: 'c-lap', name: 'Laptops', slug: 'laptops', icon: 'laptop' },
+  { id: 'c-pc', name: 'Desktops & PCs', slug: 'desktops', icon: 'desktop' },
+  { id: 'c-cctv', name: 'CCTV & Security', slug: 'cctv', icon: 'cctv' },
+  { id: 'c-comp', name: 'Components', slug: 'components', icon: 'chip' },
+  { id: 'c-net', name: 'Networking', slug: 'networking', icon: 'wifi' },
+  { id: 'c-acc', name: 'Accessories', slug: 'accessories', icon: 'keyboard' },
+];
+
+export const brands: Brand[] = [
+  { id: 'b-lenovo', name: 'Lenovo' }, { id: 'b-apple', name: 'Apple' }, { id: 'b-asus', name: 'ASUS' },
+  { id: 'b-hp', name: 'HP' }, { id: 'b-hik', name: 'Hikvision' }, { id: 'b-amd', name: 'AMD' },
+  { id: 'b-tp', name: 'TP-Link' }, { id: 'b-lg', name: 'LG' }, { id: 'b-corsair', name: 'Corsair' },
+];
+
+const img = (seed: string, n = 3) => Array.from({ length: n }, (_, i) => `https://picsum.photos/seed/snd-${seed}-${i}/800/800`);
+
+export const products: Product[] = [
+  { id: 'p-1', slug: 'thinkpad-x1-carbon-gen-12', name: 'ThinkPad X1 Carbon Gen 12', brand: 'Lenovo', categoryId: 'c-lap',
+    price: 168000, mrp: 189900, gstRate: 18, rating: 4.8, reviews: 126, stock: 3, images: img('tp'),
+    highlights: ['Intel Core i7-1365U', '32GB LPDDR5 RAM', '1TB PCIe SSD', '14" 2.8K OLED', 'Windows 11 Pro'],
+    specs: [{ k: 'Processor', v: 'Intel Core i7-1365U' }, { k: 'RAM', v: '32GB LPDDR5' }, { k: 'Storage', v: '1TB SSD' }, { k: 'Display', v: '14" 2.8K OLED' }, { k: 'Weight', v: '1.12 kg' }],
+    warranty: '3-year onsite', featured: true, bestSeller: true },
+  { id: 'p-2', slug: 'macbook-air-15-m3', name: 'MacBook Air 15" M3', brand: 'Apple', categoryId: 'c-lap',
+    price: 134900, mrp: 144900, gstRate: 18, rating: 4.9, reviews: 312, stock: 2, images: img('mba'),
+    highlights: ['Apple M3 chip', '16GB unified memory', '512GB SSD', '15.3" Liquid Retina', '18-hr battery'],
+    specs: [{ k: 'Chip', v: 'Apple M3' }, { k: 'Memory', v: '16GB' }, { k: 'Storage', v: '512GB' }, { k: 'Display', v: '15.3" Liquid Retina' }],
+    warranty: '1-year Apple', featured: true, bestSeller: true, deal: 7 },
+  { id: 'p-3', slug: 'ideapad-slim-5', name: 'IdeaPad Slim 5', brand: 'Lenovo', categoryId: 'c-lap',
+    price: 62990, mrp: 74990, gstRate: 18, rating: 4.5, reviews: 89, stock: 7, images: img('ips'),
+    highlights: ['Ryzen 7 7730U', '16GB RAM', '512GB SSD', '16" WUXGA'], specs: [{ k: 'Processor', v: 'Ryzen 7 7730U' }, { k: 'RAM', v: '16GB' }, { k: 'Storage', v: '512GB' }],
+    warranty: '1-year', newArrival: true, deal: 16 },
+  { id: 'p-4', slug: 'apex-gaming-tower-rtx-4070', name: 'Apex Gaming Tower RTX 4070', brand: 'ASUS', categoryId: 'c-pc',
+    price: 142500, mrp: 159900, gstRate: 18, rating: 4.7, reviews: 64, stock: 4, images: img('atw'),
+    highlights: ['Core i5-14600KF', '32GB DDR5', 'RTX 4070 12GB', '1TB NVMe', 'RGB build'],
+    specs: [{ k: 'CPU', v: 'i5-14600KF' }, { k: 'GPU', v: 'RTX 4070 12GB' }, { k: 'RAM', v: '32GB DDR5' }, { k: 'Storage', v: '1TB NVMe' }],
+    warranty: '2-year', featured: true, bestSeller: true },
+  { id: 'p-5', slug: 'office-mini-pc', name: 'Office Mini PC', brand: 'HP', categoryId: 'c-pc',
+    price: 38900, mrp: 44900, gstRate: 18, rating: 4.3, reviews: 41, stock: 9, images: img('mpc'),
+    highlights: ['Core i3-1215U', '8GB RAM', '256GB SSD', 'Compact'], specs: [{ k: 'CPU', v: 'i3-1215U' }, { k: 'RAM', v: '8GB' }, { k: 'Storage', v: '256GB' }],
+    warranty: '1-year', newArrival: true },
+  { id: 'p-6', slug: 'dome-camera-5mp-ip', name: 'Dome Camera 5MP IP', brand: 'Hikvision', categoryId: 'c-cctv',
+    price: 4290, mrp: 5200, gstRate: 18, rating: 4.6, reviews: 203, stock: 24, images: img('dom'),
+    highlights: ['5MP resolution', 'IR night vision 30m', 'PoE', 'IP67 weatherproof'], specs: [{ k: 'Resolution', v: '5MP' }, { k: 'Night vision', v: '30m IR' }, { k: 'Power', v: 'PoE' }],
+    warranty: '2-year', bestSeller: true, deal: 17 },
+  { id: 'p-7', slug: 'nvr-8-channel-4k', name: 'NVR 8-Channel 4K', brand: 'Hikvision', categoryId: 'c-cctv',
+    price: 11900, mrp: 13900, gstRate: 18, rating: 4.5, reviews: 77, stock: 6, images: img('nvr'),
+    highlights: ['8 channels', '4K recording', '2 SATA bays'], specs: [{ k: 'Channels', v: '8' }, { k: 'Recording', v: '4K' }],
+    warranty: '2-year', featured: true },
+  { id: 'p-8', slug: 'bullet-camera-4mp', name: 'Bullet Camera 4MP', brand: 'Hikvision', categoryId: 'c-cctv',
+    price: 3490, mrp: 4200, gstRate: 18, rating: 4.4, reviews: 132, stock: 12, images: img('bul'),
+    highlights: ['4MP', 'IP67', 'IR night vision'], specs: [{ k: 'Resolution', v: '4MP' }], warranty: '2-year' },
+  { id: 'p-9', slug: 'rtx-4070-ti-super', name: 'RTX 4070 Ti Super 16GB', brand: 'ASUS', categoryId: 'c-comp',
+    price: 84990, mrp: 92990, gstRate: 18, rating: 4.8, reviews: 58, stock: 5, images: img('gpu'),
+    highlights: ['16GB GDDR6X', 'DLSS 3', 'Triple fan'], specs: [{ k: 'Memory', v: '16GB GDDR6X' }], warranty: '3-year', featured: true, bestSeller: true },
+  { id: 'p-10', slug: 'ryzen-7-7800x3d', name: 'Ryzen 7 7800X3D', brand: 'AMD', categoryId: 'c-comp',
+    price: 38990, mrp: 42990, gstRate: 18, rating: 4.9, reviews: 211, stock: 8, images: img('cpu'),
+    highlights: ['8 cores / 16 threads', 'AM5', '3D V-Cache'], specs: [{ k: 'Cores', v: '8C/16T' }, { k: 'Socket', v: 'AM5' }], warranty: '3-year', bestSeller: true },
+  { id: 'p-11', slug: '32gb-ddr5-6000-kit', name: '32GB DDR5 6000 Kit', brand: 'Corsair', categoryId: 'c-comp',
+    price: 9800, mrp: 11500, gstRate: 18, rating: 4.7, reviews: 96, stock: 14, images: img('ram'),
+    highlights: ['2x16GB', 'CL30', 'RGB'], specs: [{ k: 'Kit', v: '2x16GB' }, { k: 'Speed', v: '6000MHz' }], warranty: 'Lifetime', deal: 15, newArrival: true },
+  { id: 'p-12', slug: 'wifi-6-router-ax3000', name: 'WiFi 6 Router AX3000', brand: 'TP-Link', categoryId: 'c-net',
+    price: 6499, mrp: 7999, gstRate: 18, rating: 4.5, reviews: 154, stock: 18, images: img('rtr'),
+    highlights: ['AX3000', 'Dual band', '4 antennas'], specs: [{ k: 'Speed', v: 'AX3000' }], warranty: '3-year', deal: 19 },
+  { id: 'p-13', slug: '24-port-gigabit-switch', name: '24-Port Gigabit Switch', brand: 'TP-Link', categoryId: 'c-net',
+    price: 9990, mrp: 11200, gstRate: 18, rating: 4.6, reviews: 38, stock: 3, images: img('sw'),
+    highlights: ['24 ports', 'Gigabit', 'Metal body'], specs: [{ k: 'Ports', v: '24' }], warranty: '3-year' },
+  { id: 'p-14', slug: 'mechanical-keyboard-tkl', name: 'Mechanical Keyboard TKL', brand: 'Corsair', categoryId: 'c-acc',
+    price: 7490, mrp: 8990, gstRate: 18, rating: 4.7, reviews: 244, stock: 22, images: img('kbd'),
+    highlights: ['Hot-swap', 'RGB', 'TKL layout'], specs: [{ k: 'Layout', v: 'TKL' }], warranty: '1-year', newArrival: true, bestSeller: true },
+  { id: 'p-15', slug: '27-165hz-monitor', name: '27" 165Hz Gaming Monitor', brand: 'LG', categoryId: 'c-acc',
+    price: 21900, mrp: 26900, gstRate: 18, rating: 4.6, reviews: 118, stock: 6, images: img('mon'),
+    highlights: ['QHD', 'IPS', '165Hz', '1ms'], specs: [{ k: 'Resolution', v: 'QHD' }, { k: 'Refresh', v: '165Hz' }], warranty: '3-year', featured: true, deal: 19 },
+];
