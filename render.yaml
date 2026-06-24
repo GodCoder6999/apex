@@ -1,10 +1,9 @@
-# Render Static Sites only. The shared Node API (snd-shared-api) and its
-# Postgres (snd-db) already exist as standalone services and are managed
-# outside this blueprint, so they are intentionally NOT defined here (avoids
-# duplicate-create errors on sync).
+# Render Static Sites. The shared Node API (snd-shared-api) and its Postgres
+# (snd-db) already exist as standalone services and are managed outside this
+# blueprint, so they are NOT defined here (avoids duplicate-create on sync).
 #
-# Each static site reads VITE_API_BASE at build time. Set it in the Render
-# dashboard (Environment tab) to the snd-shared-api host, then redeploy.
+# Both sites bake VITE_API_BASE at build time -> they read the live shared
+# catalog and push customer orders as enquiries.
 services:
   # ---- owner dashboard (static) ----
   - type: web
@@ -13,6 +12,9 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
+    envVars:
+      - key: VITE_API_BASE
+        value: https://snd-shared-api.onrender.com
 
   # ---- customer storefront (static, distinct theme) ----
   - type: web
@@ -22,3 +24,6 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
+    envVars:
+      - key: VITE_API_BASE
+        value: https://snd-shared-api.onrender.com
