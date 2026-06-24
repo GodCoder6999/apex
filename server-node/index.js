@@ -138,6 +138,12 @@ for (const r of RESOURCES) {
   }));
 }
 
+// Listen IMMEDIATELY so Render's health check on `/` passes; seed the DB in the
+// background. (Blocking listen on init() can stall the deploy for many minutes
+// while tables/seed rows are created, and a slow/failed DB connect would mean
+// the port never opens at all.)
 const port = process.env.PORT || 3000;
-init().then(() => app.listen(port, () => console.log('snd-shared-api on :' + port)))
-  .catch((e) => { console.error('init failed', e); process.exit(1); });
+app.listen(port, () => console.log('snd-shared-api on :' + port));
+
+init().then(() => console.log('DB ready'))
+  .catch((e) => console.error('init failed:', e));
