@@ -1,31 +1,11 @@
-# Render Blueprint for the whole S&D suite (one repo).
-# Render → Blueprints → s&d → Manual sync  (reads THIS file at repo root).
+# Render Static Sites only. The shared Node API (snd-shared-api) and its
+# Postgres (snd-db) already exist as standalone services and are managed
+# outside this blueprint, so they are intentionally NOT defined here (avoids
+# duplicate-create errors on sync).
 #
-# Creates:
-#   - snd-data          free Postgres (shared data)
-#   - snd-api           Node API (catalog, orders, enquiries)  <-- the wire
-#   - apex-owner-web    owner dashboard (static)   -> talks to the API
-#   - snd-shop          customer storefront (static) -> talks to the API
-databases:
-  - name: snd-data
-    plan: free
-
+# Each static site reads VITE_API_BASE at build time. Set it in the Render
+# dashboard (Environment tab) to the snd-shared-api host, then redeploy.
 services:
-  # ---- shared backend (wires all apps) ----
-  - type: web
-    name: snd-api
-    runtime: node
-    plan: free
-    rootDir: server-node
-    buildCommand: npm install
-    startCommand: npm start
-    healthCheckPath: /
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: snd-data
-          property: connectionString
-
   # ---- owner dashboard (static) ----
   - type: web
     name: apex-owner-web
@@ -33,12 +13,6 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
-    envVars:
-      - key: VITE_API_BASE
-        fromService:
-          name: snd-api
-          type: web
-          property: host
 
   # ---- customer storefront (static, distinct theme) ----
   - type: web
@@ -48,9 +22,3 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
-    envVars:
-      - key: VITE_API_BASE
-        fromService:
-          name: snd-api
-          type: web
-          property: host
