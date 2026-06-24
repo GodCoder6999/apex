@@ -2,18 +2,18 @@
 # Render → Blueprints → s&d → Manual sync  (reads THIS file at repo root).
 #
 # Creates:
-#   - snd-db            free Postgres (shared data)
-#   - snd-shared-api    Node API (catalog, orders, enquiries)  <-- the wire
+#   - snd-data          free Postgres (shared data)
+#   - snd-api           Node API (catalog, orders, enquiries)  <-- the wire
 #   - apex-owner-web    owner dashboard (static)   -> talks to the API
-#   - snd-store         customer storefront (static) -> talks to the API
+#   - snd-shop          customer storefront (static) -> talks to the API
 databases:
-  - name: snd-db
+  - name: snd-data
     plan: free
 
 services:
   # ---- shared backend (wires all apps) ----
   - type: web
-    name: snd-shared-api
+    name: snd-api
     runtime: node
     plan: free
     rootDir: server-node
@@ -23,7 +23,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: snd-db
+          name: snd-data
           property: connectionString
 
   # ---- owner dashboard (static) ----
@@ -36,13 +36,13 @@ services:
     envVars:
       - key: VITE_API_BASE
         fromService:
-          name: snd-shared-api
+          name: snd-api
           type: web
           property: host
 
   # ---- customer storefront (static, distinct theme) ----
   - type: web
-    name: snd-store
+    name: snd-shop
     runtime: static
     rootDir: store
     buildCommand: npm install && npm run build
@@ -51,6 +51,6 @@ services:
     envVars:
       - key: VITE_API_BASE
         fromService:
-          name: snd-shared-api
+          name: snd-api
           type: web
           property: host
