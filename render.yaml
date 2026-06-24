@@ -1,10 +1,56 @@
-# Render Static Site (no PHP, no server). Push this repo to GitHub, then in
-# Render: New + → Static Site → pick repo. These values are auto-read.
+# Render Blueprint for the whole S&D suite (one repo).
+# Render → Blueprints → s&d → Manual sync  (reads THIS file at repo root).
+#
+# Creates:
+#   - snd-db            free Postgres (shared data)
+#   - snd-shared-api    Node API (catalog, orders, enquiries)  <-- the wire
+#   - apex-owner-web    owner dashboard (static)   -> talks to the API
+#   - snd-store         customer storefront (static) -> talks to the API
+databases:
+  - name: snd-db
+    plan: free
+
 services:
+  # ---- shared backend (wires all apps) ----
+  - type: web
+    name: snd-shared-api
+    runtime: node
+    plan: free
+    rootDir: server-node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: snd-db
+          property: connectionString
+
+  # ---- owner dashboard (static) ----
   - type: web
     name: apex-owner-web
     runtime: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
-    # HashRouter is used, so no SPA rewrite rule is required.
+    envVars:
+      - key: VITE_API_BASE
+        fromService:
+          name: snd-shared-api
+          type: web
+          property: host
+
+  # ---- customer storefront (static, distinct theme) ----
+  - type: web
+    name: snd-store
+    runtime: static
+    rootDir: store
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: VITE_API_BASE
+        fromService:
+          name: snd-shared-api
+          type: web
+          property: host

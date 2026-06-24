@@ -4,7 +4,9 @@
 import type { Order, Product, Category } from './types';
 import { hydrate } from './catalog';
 
-export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
+// Accept a bare host (Render fromService) or a full URL; always end up with https://host (no trailing slash).
+const _raw = (import.meta.env.VITE_API_BASE ?? '').trim().replace(/\/$/, '');
+export const API_BASE = _raw && !/^https?:\/\//.test(_raw) ? `https://${_raw}` : _raw;
 export const USE_API = API_BASE.length > 0;
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
