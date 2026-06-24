@@ -15,25 +15,37 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 export async function hydrateFromApi(): Promise<void> {
   if (!USE_API) return;
   try {
-    const r = await fetch(`${API_BASE}/api/bootstrap`);
+    // Free-tier API can cold-start (~50s). Allow time but never hang forever.
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 60000);
+    const r = await fetch(`${API_BASE}/api/bootstrap`, { signal: ctl.signal });
+    clearTimeout(t);
     if (!r.ok) return;
     const b = await r.json();
     const stock = new Map<string, number>();
     for (const u of (b.units || [])) if (u.status === 'in_storage') stock.set(u.productId, (stock.get(u.productId) || 0) + 1);
 
     const cats: Category[] = (b.categories || []).map((c: any) => ({ id: c.id, name: c.name, slug: c.slug || slugify(c.name), icon: c.icon || 'chip' }));
-    const products: Product[] = (b.products || []).filter((p: any) => p.active !== false).map((p: any): Product => {
+    const active = (b.products || []).filter((p: any) => p.active !== false);
+    const products: Product[] = active.map((p: any, i: number): Product => {
       const images = Array.isArray(p.images) && p.images.length ? p.images : (p.image ? [p.image] : []);
       const specs = Array.isArray(p.specs) ? p.specs
         : (typeof p.specs === 'string' && p.specs ? p.specs.split('·').map((x: string) => ({ k: 'Spec', v: x.trim() })) : []);
       const highlights = Array.isArray(p.highlights) && p.highlights.length ? p.highlights
         : (typeof p.specs === 'string' ? p.specs.split('·').map((x: string) => x.trim()).filter(Boolean) : []);
+      const rating = Number(p.rating) || 4.6;
+      // The owner catalog has no merchandising flags, so the storefront home
+      // sections would be empty. Derive sensible defaults when absent so Home
+      // populates: spread featured/best-seller/new-arrival across the catalog.
+      const featured = p.featured ?? (i % 3 === 0);
+      const bestSeller = p.bestSeller ?? (rating >= 4.6);
+      const newArrival = p.newArrival ?? (i >= active.length - 4);
       return {
         id: p.id, slug: p.slug || slugify(p.name), name: p.name, brand: p.brand || '', categoryId: p.categoryId,
         price: Number(p.price) || 0, mrp: p.mrp ? Number(p.mrp) : undefined, gstRate: Number(p.gstRate) || 18,
-        rating: Number(p.rating) || 4.6, reviews: Number(p.reviews) || 0, stock: stock.get(p.id) || 0,
-        images, highlights, specs, warranty: p.warranty, featured: p.featured, bestSeller: p.bestSeller,
-        newArrival: p.newArrival, deal: p.mrp && p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : undefined,
+        rating, reviews: Number(p.reviews) || 0, stock: stock.get(p.id) || 0,
+        images, highlights, specs, warranty: p.warranty, featured, bestSeller,
+        newArrival, deal: p.mrp && p.mrp > p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : undefined,
       };
     });
     hydrate(products, cats);
