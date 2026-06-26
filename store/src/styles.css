@@ -2,7 +2,9 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 html, body, #root { margin: 0; padding: 0; }
-body { overflow-x: hidden; }
+/* clip (not hidden) prevents horizontal scroll WITHOUT creating a scroll
+   container — keeps position:sticky on the header working. */
+html, body { overflow-x: clip; }
 body {
   background: #FBFBFD;
   font-family: 'General Sans', system-ui, sans-serif;
