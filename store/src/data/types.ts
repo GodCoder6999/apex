@@ -18,6 +18,7 @@ export interface Product {
   images: string[];
   highlights: string[];
   specs: { k: string; v: string }[];
+  box?: string[];      // "what's in the box" — optional
   warranty?: string;
   featured?: boolean;
   bestSeller?: boolean;

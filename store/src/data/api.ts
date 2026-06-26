@@ -52,6 +52,19 @@ export async function hydrateFromApi(): Promise<void> {
   } catch (e) { console.warn('[api] catalog hydrate failed', e); }
 }
 
+/** Push a B2B / bulk quote request to the shop as an enquiry. */
+export async function pushQuoteEnquiry(q: { name: string; phone: string; email?: string; product?: string; qty?: string; note?: string }): Promise<void> {
+  if (!USE_API) return;
+  const note = `BULK / B2B QUOTE\nProduct: ${q.product || '—'} · Qty: ${q.qty || '—'}` + (q.email ? `\nEmail: ${q.email}` : '') + (q.note ? `\n${q.note}` : '');
+  const items = q.product ? [{ name: q.product, qty: Number(q.qty) || 1 }] : [];
+  try {
+    await fetch(`${API_BASE}/api/enquiries`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: q.name, phone: q.phone, items, note, status: 'open' }),
+    });
+  } catch (e) { console.warn('[api] quote enquiry failed', e); }
+}
+
 /** Push a customer order to the shop as an enquiry (owner/seller see it). */
 export async function pushOrderAsEnquiry(order: Order): Promise<void> {
   if (!USE_API) return;

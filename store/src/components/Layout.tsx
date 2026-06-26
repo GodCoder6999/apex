@@ -4,19 +4,21 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { CartDrawer } from './CartDrawer';
 import { Toast, MobileTab } from './Chrome';
+import { useIsMobile, useScrolled } from './useViewport';
 
 export function Layout() {
   const loc = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [loc.pathname]);
+  const isMobile = useIsMobile();
+  const scrolled = useScrolled();
+  useEffect(() => { try { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); } catch { window.scrollTo(0, 0); } }, [loc.pathname, loc.search]);
   return (
-    <>
-      <Header />
-      <main style={{ minHeight: '60vh', paddingBottom: 60 }}><Outlet /></main>
-      <Footer />
-      <CartDrawer />
+    <div style={{ minHeight: '100vh', width: '100%', overflowX: 'hidden', position: 'relative' }}>
+      <Header isMobile={isMobile} scrolled={scrolled} />
+      <main style={{ minHeight: '60vh' }}><Outlet /></main>
+      <Footer isMobile={isMobile} />
+      <CartDrawer isMobile={isMobile} />
       <Toast />
-      <MobileTab />
-      <div className="mob-only" style={{ height: 64 }} />
-    </>
+      {isMobile && <MobileTab />}
+    </div>
   );
 }
