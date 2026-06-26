@@ -5,6 +5,7 @@ import { catMetaForProduct, catMetaBySlug } from '../data/catmeta';
 import { categories, inStock, search } from '../data/catalog';
 import { rupee } from '../format';
 import { useStore } from '../store';
+import { useHeaderHidden } from './useViewport';
 
 const POPULAR = ['Laptops', 'CCTV camera', 'MacBook', 'SSD', 'Wi-Fi router', 'Gaming PC'];
 
@@ -20,6 +21,7 @@ export function Header({ isMobile, scrolled }: { isMobile: boolean; scrolled: bo
   const results = useMemo(() => (q.trim() ? search(q).slice(0, 6) : []), [q]);
   const wishCount = Object.keys(wish).length;
 
+  const hidden = useHeaderHidden();
   useEffect(() => { const on = () => setSearchOpen(true); window.addEventListener('sd-open-search', on); return () => window.removeEventListener('sd-open-search', on); }, []);
 
   const go = (path: string) => { setMega(false); setMenu(false); setSearchOpen(false); nav(path); };
@@ -27,7 +29,7 @@ export function Header({ isMobile, scrolled }: { isMobile: boolean; scrolled: bo
   const headerH = scrolled ? 62 : 72;
 
   return (
-    <header style={{ position: 'sticky', top: 0, zIndex: 100, background: `rgba(255,255,255,${scrolled ? 0.92 : 0.8})`, backdropFilter: 'blur(16px)', borderBottom: `1px solid rgba(11,16,32,${scrolled ? 0.08 : 0.05})`, transition: 'background .3s,border-color .3s' }}>
+    <header style={{ position: 'sticky', top: 0, zIndex: 100, background: `rgba(255,255,255,${scrolled ? 0.92 : 0.8})`, backdropFilter: 'blur(16px)', borderBottom: `1px solid rgba(11,16,32,${scrolled ? 0.08 : 0.05})`, transform: hidden ? 'translateY(-100%)' : 'translateY(0)', transition: 'transform .35s cubic-bezier(.22,1,.36,1), background .3s, border-color .3s' }}>
       <Announcement />
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 clamp(16px,4vw,40px)', display: 'flex', alignItems: 'center', gap: 18, height: headerH, transition: 'height .3s cubic-bezier(.22,1,.36,1)' }}>

@@ -21,3 +21,21 @@ export function useScrolled(threshold = 14) {
   }, [threshold]);
   return s;
 }
+
+// Hide-on-scroll-down, reveal-on-scroll-up (smooth, like most sites).
+export function useHeaderHidden() {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const on = () => {
+      const y = window.scrollY;
+      if (y < 90) { setHidden(false); }
+      else if (y > last + 6) { setHidden(true); }
+      else if (y < last - 6) { setHidden(false); }
+      last = y;
+    };
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
+  return hidden;
+}

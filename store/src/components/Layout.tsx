@@ -12,7 +12,7 @@ export function Layout() {
   const scrolled = useScrolled();
   useEffect(() => { try { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); } catch { window.scrollTo(0, 0); } }, [loc.pathname, loc.search]);
   return (
-    <div style={{ minHeight: '100vh', width: '100%', overflowX: 'hidden', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', width: '100%', position: 'relative' }}>
       <Header isMobile={isMobile} scrolled={scrolled} />
       <main style={{ minHeight: '60vh' }}><Outlet /></main>
       <Footer isMobile={isMobile} />
