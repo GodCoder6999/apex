@@ -6,7 +6,7 @@ import { color, radius } from '../theme';
 import { font } from '../fonts';
 import { T, Card, Btn, Sheet, Field, Input, useToast } from '../ui';
 import { Icon } from '../icons';
-import { StackScreen, Money, InvoiceBody, shareInvoice, printInvoice } from '../components';
+import { StackScreen, Money, InvoiceBody, shareInvoice, printInvoice, SlideToConfirm } from '../components';
 import { useAuth } from '../auth';
 import { rupee } from '../format';
 import {
@@ -189,7 +189,7 @@ export function Sell() {
         <Field label="Paying now"><Input value={paidNow} keyboardType="numeric" onChangeText={setPaidNow} placeholder={rupee(grandTotal)} mono style={{ textAlign: 'right' }} /></Field>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}><T size={13} c={color.muted}>Paying now</T><Money value={Math.min(paying, grandTotal)} size={13} c={color.accentDeep} /></View>
         {due > 0 && <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}><T size={13} c={color.muted}>Goes to dues</T><Money value={due} size={13} c={color.red} /></View>}
-        <Btn label="Generate invoice" icon="doc" full style={{ marginTop: 8 }} onPress={generate} />
+        <SlideToConfirm onConfirm={generate} style={{ marginTop: 10 }} />
       </Sheet>
 
       {/* invoice result */}

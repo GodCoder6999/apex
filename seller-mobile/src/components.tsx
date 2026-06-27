@@ -1,7 +1,8 @@
 // Shared layout pieces: screen wrappers (tab + stacked), money/serial text,
 // product thumbnail, KPI tile, invoice preview/share.
-import { type ReactNode } from 'react';
-import { View, ScrollView, Pressable, Image, Share } from 'react-native';
+import { useRef, useState, type ReactNode } from 'react';
+import { View, ScrollView, Pressable, Image, Share, Animated, PanResponder, Vibration } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as Print from 'expo-print';
@@ -352,6 +353,72 @@ function Cell({ children, flex, w, bold, center, right, last, mono }: {
   return (
     <View style={{ flex: flex ? 1 : undefined, width: w, padding: 6, borderRightWidth: last ? 0 : 1, borderRightColor: BC }}>
       <T size={10.5} w={bold ? 'b' : 'r'} mono={mono} style={{ textAlign: center ? 'center' : right ? 'right' : 'left' }}>{children}</T>
+    </View>
+  );
+}
+
+// ---------- Slide-to-confirm (replaces the "Generate invoice" tap button) ----------
+// Drag the knob across the track to fire `onConfirm`. Releasing before the end
+// snaps back. Uses Animated + PanResponder (no extra deps), so it stays smooth.
+const TRACK_H = 58, KNOB = 50, PAD = 4;
+export function SlideToConfirm({ label = 'Slide to generate invoice', doneLabel = 'Generating invoice…', onConfirm, style }: {
+  label?: string; doneLabel?: string; onConfirm: () => void; style?: any;
+}) {
+  const [trackW, setTrackW] = useState(0);
+  const [done, setDone] = useState(false);
+  const x = useRef(new Animated.Value(0)).current;
+  const cur = useRef(0);                // live knob offset
+  const start = useRef(0);              // offset at gesture start
+  const slid = useRef(false);
+  const max = Math.max(0, trackW - KNOB - PAD * 2);
+
+  const pan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => { start.current = cur.current; },
+    onPanResponderMove: (_e, g) => {
+      if (slid.current) return;
+      const m = Math.max(0, trackW - KNOB - PAD * 2);
+      const nx = Math.min(m, Math.max(0, start.current + g.dx));
+      cur.current = nx; x.setValue(nx);
+      if (m > 0 && nx >= m - 1.5) { slid.current = true; complete(m); }
+    },
+    onPanResponderRelease: () => { if (!slid.current) snapBack(); },
+    onPanResponderTerminate: () => { if (!slid.current) snapBack(); },
+  })).current;
+
+  const snapBack = () => {
+    cur.current = 0;
+    Animated.spring(x, { toValue: 0, useNativeDriver: false, bounciness: 12, speed: 14 }).start();
+  };
+  const complete = (m: number) => {
+    cur.current = m;
+    Animated.timing(x, { toValue: m, duration: 180, useNativeDriver: false }).start();
+    setDone(true);
+    try { Vibration.vibrate(18); } catch { /* ignore */ }
+    setTimeout(() => { slid.current = false; setDone(false); cur.current = 0; x.setValue(0); onConfirm(); }, 380);
+  };
+
+  const fillW = Animated.add(x, new Animated.Value(PAD + KNOB));
+  const labelOpacity = max > 0 ? x.interpolate({ inputRange: [0, max], outputRange: [1, 0], extrapolate: 'clamp' }) : 1;
+
+  return (
+    <View onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
+      style={[{ position: 'relative', width: '100%', height: TRACK_H, borderRadius: 16, backgroundColor: '#EAEDF1', overflow: 'hidden' }, style]}>
+      <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: done ? '100%' : fillW, borderRadius: 16, backgroundColor: color.accentDeep }} />
+      <Animated.View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', paddingLeft: done ? 0 : 34, opacity: done ? 1 : labelOpacity }} pointerEvents="none">
+        {done
+          ? <T w="b" size={15} c="#04140d">{doneLabel}</T>
+          : (<><T w="s" size={15} c={color.muted}>{label}</T>
+              <Svg width={16} height={16} viewBox="0 0 24 24" style={{ marginLeft: 8 }}><Path d="M9 6l6 6-6 6" fill="none" stroke={color.accent} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" /></Svg></>)}
+      </Animated.View>
+      <Animated.View {...pan.panHandlers} style={{ position: 'absolute', top: PAD, left: PAD, width: KNOB, height: KNOB, borderRadius: 13, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', transform: [{ translateX: x }], shadowColor: color.accentDeep, shadowOpacity: 0.45, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4 }}>
+        <Svg width={22} height={22} viewBox="0 0 24 24">
+          {done
+            ? <Path d="M20 6L9 17l-5-5" fill="none" stroke={color.accentDeep} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+            : <Path d="M5 12h13M12 5l7 7-7 7" fill="none" stroke={color.accentDeep} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+        </Svg>
+      </Animated.View>
     </View>
   );
 }
