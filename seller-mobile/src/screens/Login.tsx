@@ -24,9 +24,10 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     if (!email || !password) { toast('Enter email and password', 'err'); return; }
-    if (!login(email.trim(), password)) toast('Invalid credentials', 'err');
+    const s = await login(email.trim(), password);
+    if (!s) toast('Invalid credentials', 'err');
   };
 
   return (
