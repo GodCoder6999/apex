@@ -367,18 +367,33 @@ export function SlideToConfirm({ label = 'Slide to generate invoice', doneLabel 
   const [trackW, setTrackW] = useState(0);
   const [done, setDone] = useState(false);
   const x = useRef(new Animated.Value(0)).current;
-  const cur = useRef(0);                // live knob offset
-  const start = useRef(0);              // offset at gesture start
+  const widthRef = useRef(0);          // live track width (read inside pan handlers)
+  const cur = useRef(0);               // live knob offset
+  const start = useRef(0);             // offset at gesture start
   const slid = useRef(false);
+  const onConfirmRef = useRef(onConfirm); onConfirmRef.current = onConfirm;
   const max = Math.max(0, trackW - KNOB - PAD * 2);
 
+  const snapBack = () => { cur.current = 0; Animated.spring(x, { toValue: 0, useNativeDriver: false, bounciness: 12, speed: 14 }).start(); };
+  const complete = (m: number) => {
+    cur.current = m;
+    Animated.timing(x, { toValue: m, duration: 180, useNativeDriver: false }).start();
+    setDone(true);
+    try { Vibration.vibrate(18); } catch { /* ignore */ }
+    setTimeout(() => { slid.current = false; setDone(false); cur.current = 0; x.setValue(0); onConfirmRef.current(); }, 380);
+  };
+
+  // Created once; reads live width/state from refs so it never goes stale.
   const pan = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponderCapture: () => true,
     onMoveShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponderCapture: () => true,
+    onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: () => { start.current = cur.current; },
     onPanResponderMove: (_e, g) => {
       if (slid.current) return;
-      const m = Math.max(0, trackW - KNOB - PAD * 2);
+      const m = Math.max(0, widthRef.current - KNOB - PAD * 2);
       const nx = Math.min(m, Math.max(0, start.current + g.dx));
       cur.current = nx; x.setValue(nx);
       if (m > 0 && nx >= m - 1.5) { slid.current = true; complete(m); }
@@ -387,23 +402,11 @@ export function SlideToConfirm({ label = 'Slide to generate invoice', doneLabel 
     onPanResponderTerminate: () => { if (!slid.current) snapBack(); },
   })).current;
 
-  const snapBack = () => {
-    cur.current = 0;
-    Animated.spring(x, { toValue: 0, useNativeDriver: false, bounciness: 12, speed: 14 }).start();
-  };
-  const complete = (m: number) => {
-    cur.current = m;
-    Animated.timing(x, { toValue: m, duration: 180, useNativeDriver: false }).start();
-    setDone(true);
-    try { Vibration.vibrate(18); } catch { /* ignore */ }
-    setTimeout(() => { slid.current = false; setDone(false); cur.current = 0; x.setValue(0); onConfirm(); }, 380);
-  };
-
-  const fillW = Animated.add(x, new Animated.Value(PAD + KNOB));
   const labelOpacity = max > 0 ? x.interpolate({ inputRange: [0, max], outputRange: [1, 0], extrapolate: 'clamp' }) : 1;
+  const fillW = max > 0 ? x.interpolate({ inputRange: [0, max], outputRange: [PAD + KNOB, trackW], extrapolate: 'clamp' }) : (PAD + KNOB);
 
   return (
-    <View onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
+    <View onLayout={(e) => { const w = e.nativeEvent.layout.width; widthRef.current = w; setTrackW(w); }}
       style={[{ position: 'relative', width: '100%', height: TRACK_H, borderRadius: 16, backgroundColor: '#EAEDF1', overflow: 'hidden' }, style]}>
       <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: done ? '100%' : fillW, borderRadius: 16, backgroundColor: color.accentDeep }} />
       <Animated.View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', paddingLeft: done ? 0 : 34, opacity: done ? 1 : labelOpacity }} pointerEvents="none">
